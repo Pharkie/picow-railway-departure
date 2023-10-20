@@ -1,7 +1,17 @@
-from machine import Pin, I2C
+"""
+Author: Adam Knowles
+Version: 0.1
+Name: main.py
+Description: Mini OLED departure boards for model railway
+
+GitHub Repository: https://github.com/Pharkie/picow-railway-departure
+Based on work by Stewart Watkiss - PenguinTutor
+License: GNU General Public License (GPL)
+"""
+from machine import Pin, I2C # Pin, I2C # type: ignore
 from ssd1306 import SSD1306_I2C
-import utime
-import ujson
+import utime # type: ignore
+import ujson # type: ignore
 
 url = "http://192.168.0.2:8080/departures.py?platform="
 
