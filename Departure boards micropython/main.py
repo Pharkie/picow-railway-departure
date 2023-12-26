@@ -61,6 +61,8 @@ def main():
     WIDTH  = 128 # SSD1306 horizontal resolution
     HEIGHT = 32   # SSD1306 vertical resolution
 
+    i2c = I2C(0, scl=Pin(17), sda=Pin(16), freq=200000)  # start I2C on I2C0 (GP 16/17) physical 21/22
+
     # Scan for devices and print out any addresses found
     devices = i2c.scan()
 
@@ -72,7 +74,6 @@ def main():
         print("No I2C devices found.")
         sys.exit()
 
-    i2c = I2C(0, scl=Pin(17), sda=Pin(16), freq=200000)  # start I2C on I2C0 (GP 16/17) physical 21/22
     #i2c_dev1 = I2C(1,scl=Pin(19),sda=Pin(18),freq=200000)  # start I2C on I2C1 (GP 18/19) physical 24/25
 
     oled = SSD1306_I2C(WIDTH, HEIGHT, i2c)  # Init oled display
@@ -83,34 +84,34 @@ def main():
     print("I2C Configuration: " + str(i2c))                         # Display I2C config
 
     connect_wifi()
-    
+
     while True:
-        display_message (*get_train_list(0), 0)
-        display_message (*get_train_list(1), 1)
+        display_message("Penmaenmawr","calling")
+        # display_message(*get_train_list(0), 0)
+        # display_message(*get_train_list(1), 1)
         # check every 30 seconds
         utime.sleep (30)
         
 def display_message (line1 = "", line2 = "", line3 = "", display=-1):
     # no display specified - use both
     if (display == -1):
-        _disp_msg(line1,line2,line3,0)
-        _disp_msg(line1,line2,line3,1)
+        _disp_msg(line1, line2, line3, 0)
+        _disp_msg(line1, line2, line3, 1)
     elif (display == 1):
-        _disp_msg(line1,line2,line3,1)
+        _disp_msg(line1, line2, line3, 1)
     else:
-        _disp_msg(line1,line2,line3,0)
+        _disp_msg(line1, line2, line3, 0)
 
 # This internal method updates a single display only, it doesn't affect other displays.
 def _disp_msg(line1, line2, line3, display):
     global oled, oled1
-
-    oled = None  # Assign a value to oled
-    oled1 = None  # Assign a value to oled1
+  
+    # if display == 1:
+    #     disp = oled1
+    # else:
+    #     disp = oled
     
-    if display == 1:
-        disp = oled1
-    else:
-        disp = oled
+    disp = oled
 
     disp.fill(0)
     disp.text(line1, TEXT_X, TEXT_Y)
