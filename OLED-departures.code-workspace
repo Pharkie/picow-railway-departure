@@ -6,6 +6,9 @@
 		{
 			"name": "Pico (W) Remote Workspace",
 			"uri": "pico:"
+		},
+		{
+			"path": "../Pimoroni LED panel"
 		}
 	],
 	"settings": {

@@ -9,12 +9,12 @@ Based on work by Stewart Watkiss - PenguinTutor
 License: GNU General Public License (GPL)
 """
 from machine import Pin, I2C
-import network
 import utime
 from ssd1306 import SSD1306_I2C
-from wifi_creds import WIFI_SSID, WIFI_PASSWORD
 import uasyncio as asyncio
 import random
+import datetime_utils
+import utils
 
 LINEONE_Y = 0
 LINETWO_Y = 12
@@ -26,29 +26,6 @@ LINE_HEIGHT = 12
 
 # Set as global
 oled = None
-
-def connect_wifi():
-    print("connect_wifi() called")
-
-    wlan = network.WLAN(network.STA_IF)
-    wlan.active(True)
-    wlan.config(pm=0xa11140)
-    wlan.connect(WIFI_SSID, WIFI_PASSWORD)
-
-    display_message("Wifi connect to", WIFI_SSID)
-
-    max_wait = 20
-    while max_wait > 0:
-        if wlan.status() < 0 or wlan.status() >= 3:
-            break
-        max_wait -= 1
-        print("Waiting for Wifi to connect")
-        utime.sleep(0.3)
-
-    if max_wait > 0:
-        print("Wifi connected")
-    else:
-        print("Wifi not connected: timed out")
 
 def setup_display():
     global oled
@@ -117,8 +94,6 @@ async def main():
     scroll_task = None
     clock_mode = False # Setting to False will switch to clock mode first
     
-    # connect_wifi()
-
     destinations = ["Llandudno J", "Penmaenmawr", "Bangor"]
 
     while True:
@@ -144,4 +119,8 @@ async def main():
 
 if __name__ == "__main__":
     setup_display()
+    utils.connect_wifi()
+
+    sync_ntp_task = asyncio.create_task(datetime_utils.sync_rtc_periodically())
+
     asyncio.run(main())
