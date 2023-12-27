@@ -14,6 +14,7 @@ import utime
 from ssd1306 import SSD1306_I2C
 from wifi_creds import WIFI_SSID, WIFI_PASSWORD
 import uasyncio as asyncio
+import random
 
 LINEONE_Y = 0
 LINETWO_Y = 12
@@ -48,13 +49,6 @@ def connect_wifi():
         print("Wifi connected")
     else:
         print("Wifi not connected: timed out")
-
-def display_message(line1="", line2="", line3=""):
-    oled.fill(0)
-    oled.text(line1, TEXT_X, LINEONE_Y)
-    oled.text(line2, TEXT_X, LINEONE_Y + TEXT_Y_SPACE)
-    oled.text(line3, TEXT_X, LINEONE_Y + (TEXT_Y_SPACE * 2))
-    oled.show()
 
 def setup_display():
     global oled
@@ -95,17 +89,28 @@ async def display_clock():
 async def scroll_text(text, y, speed=1):
     print(f"scroll_text() called with text: {text}")
     text_width = len(text) * 8  # 8 pixels per character
-    for x in range(DISPLAY_WIDTH, -text_width, -speed):
+    for x in range(DISPLAY_WIDTH, -(text_width+1), -speed):
         clear_line(y)
         oled.text(text, x, y)
         oled.show()
         await asyncio.sleep(0.01)  # Delay between frames
+    await asyncio.sleep(3) # Pause after finished scrolling
 
 async def scroll_text_and_pause():
     print("scroll_text_and_pause() called")
+
+    info_strings = [
+        "Please keep an eye on your belongings",
+        "Mind the gap",
+        "Stand clear of the doors",
+        "The next train does not stop here - stand back",
+        "Please stand back from the platform edge",
+        "Please move down inside the car",
+    ]
+
     while True:
-        await scroll_text("Please keep an eye on your belongings", LINETHREE_Y, 2)
-        await asyncio.sleep(15)  # Wait for 5 seconds
+        text = random.choice(info_strings)
+        await scroll_text(text, LINETHREE_Y, 2)
 
 async def main():
     clock_task = None
@@ -114,14 +119,9 @@ async def main():
     
     # connect_wifi()
 
-    # display_message("Penmaenmawr", "forever")
-
     destinations = ["Llandudno J", "Penmaenmawr", "Bangor"]
 
-    n=0
     while True:
-        n = n+1
-        print(f"main() loop: {n}")
         oled.text(destinations[0], 0, LINEONE_Y)
         oled.fill_rect(85, LINEONE_Y, DISPLAY_WIDTH, LINE_HEIGHT, 0)
         oled.text("12:12", 88, LINEONE_Y)
@@ -131,18 +131,16 @@ async def main():
         oled.text("12:16", 88, LINETWO_Y)
 
         if clock_mode:
-            print("Scroll it")
             if clock_task:
                 clock_task.cancel()
             scroll_task = asyncio.create_task(scroll_text_and_pause())
         else:
-            print("Clock it")
             if scroll_task:
                 scroll_task.cancel()
             clock_task = asyncio.create_task(display_clock())
 
         clock_mode = not clock_mode
-        await asyncio.sleep(8)  # Switch tasks every 5 seconds
+        await asyncio.sleep(8)  # Switch tasks every X seconds
 
 if __name__ == "__main__":
     setup_display()
