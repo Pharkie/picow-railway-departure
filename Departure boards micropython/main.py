@@ -64,7 +64,7 @@ async def display_clock():
         await asyncio.sleep(1)  # Update every second
 
 async def scroll_text(text, y, speed=1):
-    print(f"scroll_text() called with text: {text}")
+    # print(f"scroll_text() called with text: {text}")
     text_width = len(text) * 8  # 8 pixels per character
     for x in range(DISPLAY_WIDTH, -(text_width+1), -speed):
         clear_line(y)
@@ -74,7 +74,7 @@ async def scroll_text(text, y, speed=1):
     await asyncio.sleep(3) # Pause after finished scrolling
 
 async def scroll_text_and_pause():
-    print("scroll_text_and_pause() called")
+    # print("scroll_text_and_pause() called")
 
     info_strings = [
         "Please keep an eye on your belongings",
@@ -89,6 +89,26 @@ async def scroll_text_and_pause():
         text = random.choice(info_strings)
         await scroll_text(text, LINETHREE_Y, 2)
 
+def now_plus_mins(m):
+    # Get the current time
+    current_time = utime.localtime()
+
+    # Calculate the new time
+    hours = current_time[3]
+    minutes = current_time[4] + m
+
+    # If the minutes are 60 or more, add 1 to the hours and subtract 60 from the minutes
+    if minutes >= 60:
+        hours += 1
+        minutes -= 60
+
+    # If the hours are 24 or more, subtract 24 from the hours
+    if hours >= 24:
+        hours -= 24
+
+    # Format the new time as a string
+    return "{:02d}:{:02d}".format(hours, minutes)
+
 async def main():
     clock_task = None
     scroll_task = None
@@ -99,11 +119,11 @@ async def main():
     while True:
         oled.text(destinations[0], 0, LINEONE_Y)
         oled.fill_rect(85, LINEONE_Y, DISPLAY_WIDTH, LINE_HEIGHT, 0)
-        oled.text("12:12", 88, LINEONE_Y)
+        oled.text(now_plus_mins(2), 88, LINEONE_Y)
 
         oled.text(destinations[1], 0, LINETWO_Y)
         oled.fill_rect(85, LINETWO_Y, DISPLAY_WIDTH, LINE_HEIGHT, 0)
-        oled.text("12:16", 88, LINETWO_Y)
+        oled.text(now_plus_mins(5), 88, LINETWO_Y)
 
         if clock_mode:
             if clock_task:
