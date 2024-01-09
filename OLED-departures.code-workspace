@@ -4,10 +4,6 @@
 			"path": "Departure boards micropython"
 		},
 		{
-			"name": "Pico (W) Remote Workspace",
-			"uri": "pico:"
-		},
-		{
 			"path": "../Pimoroni LED panel"
 		}
 	],
