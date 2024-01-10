@@ -14,8 +14,9 @@ import uasyncio as asyncio
 import random
 import datetime_utils
 import utils
-import ldbws
+import rail_data
 import config
+import urandom
 from ssd1306 import SSD1306_I2C
 
 # Set global variables
@@ -43,8 +44,8 @@ def setup_display():
 
     oled = SSD1306_I2C(config.DISPLAY_WIDTH, config.DISPLAY_HEIGHT, i2c)
     oled.fill(0)
-    oled.text("Pico departures", 0, config.LINEONE_Y)
-    oled.text("initilialising", 0, config.LINETWO_Y)
+    oled.text("Loading", 0, config.LINEONE_Y)
+    oled.text("Pico departures", 0, config.LINETWO_Y)
     oled.show()
 
 def clear_display():
@@ -65,7 +66,7 @@ async def display_clock():
         oled.show()
         await asyncio.sleep(1)  # Update every second
 
-async def scroll_text(text, y, speed=1):
+async def scroll_text(text, y, speed=2):
     # print(f"scroll_text() called with text: {text}")
     text_width = len(text) * 8  # 8 pixels per character
     for x in range(config.DISPLAY_WIDTH, -(text_width+1), -speed):
@@ -77,53 +78,48 @@ async def scroll_text(text, y, speed=1):
 
 async def scroll_text_and_pause():
     # print("scroll_text_and_pause() called")
-
-    info_strings = [
-        "Be alert. See it. Say it. Sorted.",
-        "Mind the gap",
-        "Stand behind the yellow line",
-        "Please have your ticket ready",
-    ]
-
     while True:
-        text = random.choice(info_strings)
+        text = random.choice(config.INFO_STRINGS)
         await scroll_text(text, config.LINETHREE_Y, 2)
 
-async def refresh_ldbws_data():
-    global nrcc_message, departures_list
-
-    ldbws_api_data = await asyncio.create_task(ldbws.get_ldbws_api_data())
-    nrcc_message = ldbws.get_nrcc_msg(ldbws_api_data) # TODO: Show this on the display
-    departures_list = ldbws.get_departures(ldbws_api_data)
+async def run_periodically(func, wait_seconds):
+    await asyncio.sleep(wait_seconds)
+    while True:
+        await func()
+        await asyncio.sleep(wait_seconds)
 
 async def main():
     # print("aysnc main() called")
+    rail_data_instance = rail_data.RailData()
+    
     clock_task = None
     scroll_task = None
     clock_mode = True # Setting to True shows message first
     
     clear_display()
 
+    # Run both functions once and wait at startup
+    await datetime_utils.sync_rtc()
+    await rail_data_instance.get_rail_data()
+
+    # Then run them in the background from now on
+    asyncio.create_task(run_periodically(datetime_utils.sync_rtc, urandom.randint(60, 6000)))  # TODO: Make just do the DST check not the clock sync
+    asyncio.create_task(run_periodically(rail_data_instance.get_rail_data, urandom.randint(59, 119)))  # Run every 1-2 minutes
+
     while True:
         if nrcc_message:
             print("Alert:", nrcc_message, "\n")
 
-        if departures_list:
-            for departure in departures_list:
-                print("Train to:", departure["destination"])
-                print("Departure time:", departure["time_due"])
-                print("Platform:", departure["platform"])
-                print()  # Add a newline between departures
-
-            if len(departures_list) > 0:
-                oled.text(departures_list[0]["destination"], 0, config.LINEONE_Y)
+        if rail_data_instance.departures_list is not None:
+            if len(rail_data_instance.departures_list) > 0:
+                oled.text(rail_data_instance.departures_list[0]["destination"], 0, config.LINEONE_Y)
                 oled.fill_rect(85, config.LINEONE_Y, config.DISPLAY_WIDTH, config.LINE_HEIGHT, 0)
-                oled.text(departures_list[0]["time_due"], 88, config.LINEONE_Y)
+                oled.text(rail_data_instance.departures_list[0]["time_due"], 88, config.LINEONE_Y)
 
-            if len(departures_list) > 1:
+            if len(rail_data_instance.departures_list) > 1:
                 oled.text(departures_list[1]["destination"], 0, config.LINETWO_Y)
                 oled.fill_rect(85, config.LINETWO_Y, config.DISPLAY_WIDTH, config.LINE_HEIGHT, 0)
-                oled.text(departures_list[1]["time_due"], 88, config.LINETWO_Y)
+                oled.text(rail_data_instance.departures_list[1]["time_due"], 88, config.LINETWO_Y)
         else:
             oled.text("No departures", 0, config.LINEONE_Y)
 
@@ -142,9 +138,5 @@ async def main():
 if __name__ == "__main__":
     setup_display()
     utils.connect_wifi()
-
-    # Set the sync tasks going
-    asyncio.create_task(datetime_utils.sync_rtc_periodically())
-    asyncio.create_task(ldbws.sync_ldbws_periodically())
 
     asyncio.run(main())

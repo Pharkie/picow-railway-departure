@@ -34,7 +34,6 @@ def last_sunday(year, month):
     return int(last_day)
 
 def is_DST(timestamp):
-    # Check if the current time is within BST (British Summer Time).
     # Check if the given timestamp is in DST (BST) considering the 1 am transition
     time_tuple = utime.localtime(timestamp)
     dst_start = last_sunday(time_tuple[0], 3)  # Last Sunday of March
@@ -72,9 +71,9 @@ def get_time_values(current_time_tuple=None):
         day_of_month, month_name, year,
     )
 
-def sync_rtc():
-    # Assuming Wifi is already connected, sync RTC to NTP, then add an hour if it's DST and update the RTC
-    # try:
+async def sync_rtc():
+    # Sync RTC to NTP, then add an hour if it's DST and update the RTC
+    try:
         if not utils.is_wifi_connected():
             raise Exception("Wi-Fi is not connected")
 
@@ -93,18 +92,5 @@ def sync_rtc():
         # rtc.datetime() param is a different format of tuple to utime.localtime() so below converts it
         rtc.datetime((utime.localtime(current_timestamp)[0], utime.localtime(current_timestamp)[1], utime.localtime(current_timestamp)[2], utime.localtime(current_timestamp)[6], utime.localtime(current_timestamp)[3], utime.localtime(current_timestamp)[4], utime.localtime(current_timestamp)[5], 0))
         print(f"RTC time set from NTP with DST: {is_DST_flag} ")
-    # except Exception as e:
-    #     print(f"Failed to set time: {e}")
-    #     pass
-    
-async def sync_rtc_periodically():
-    while True:
-        # print("sync_ntp_periodically() called")
-        sync_rtc()
-        current_time = utime.localtime()
-         
-        # Calculate seconds until the top of the next hour, then add a random offset
-        next_sync_secs = 3600 - current_time[5] - (60 * current_time[4]) + urandom.randint(0, 59)
-        
-        print(f"sync_ntp_periodically() complete. Next sync in: {next_sync_secs} secs")
-        await asyncio.sleep(next_sync_secs)  # Sleep for the calculated duration
+    except Exception as e:
+        print(f"Failed to set time: {e}")
