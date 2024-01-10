@@ -31,7 +31,7 @@ class RailData:
             self.nrcc_message = self.get_nrcc_msg(response_JSON) # TODO: Show this on the display
             self.departures_list = self.get_departures(response_JSON)
 
-            print(f"get_ldbws_data() got departures_list: {self.departures_list}")
+            # print(f"get_ldbws_data() got departures_list: {self.departures_list}")
         except Exception as e:
             print(f"Error fetching LDBWS data: {e}")
 
@@ -70,4 +70,4 @@ class RailData:
     
 if __name__ == "__main__":
     utils.connect_wifi()
-    print(get_ldbws_data())
+    print(get_rail_data())
