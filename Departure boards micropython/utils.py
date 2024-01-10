@@ -18,11 +18,16 @@ def connect_wifi():
 
     wlan = network.WLAN(network.STA_IF)
     
+    # Deactivate and then reactivate the WiFi interface for a complete reset
+    wlan.active(False)
+    utime.sleep(1)  # Wait a bit for the interface to deactivate
+    wlan.active(True)
+    utime.sleep(1)  # Wait a bit for the interface to activate
+
     # Reset connection
     if is_wifi_connected():
         disconnect_wifi()
     
-    wlan.active(True)
     # wlan.config(pm=0xa11140)
     wlan.connect(WIFI_SSID, WIFI_PASSWORD)
 

@@ -31,7 +31,8 @@ class RailData:
             self.nrcc_message = self.get_nrcc_msg(response_JSON) # TODO: Show this on the display
             self.departures_list = self.get_departures(response_JSON)
 
-            # print(f"get_ldbws_data() got departures_list: {self.departures_list}")
+            # print(f"get_rail_data() got departures_list: {self.departures_list}")
+            print(f"get_rail_data() got rail data")
         except Exception as e:
             print(f"Error fetching LDBWS data: {e}")
 

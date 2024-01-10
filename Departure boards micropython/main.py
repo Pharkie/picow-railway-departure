@@ -51,13 +51,16 @@ def clear_line(y):
     oled1.fill_rect(0, y, DISPLAY_WIDTH, LINE_HEIGHT, 0)
 
 async def display_clock():
+    time_string = "{:02d}:{:02d}:{:02d}"
+    text_width = len(time_string.format(0, 0, 0)) * 8  # 8 pixels per character
+    x = (DISPLAY_WIDTH - text_width) // 2
+
     while True:
-        clear_line(LINETHREE_Y)
+        # Clear only the area where the time is displayed
+        oled1.fill_rect(x, LINETHREE_Y, text_width, 8, 0)
+
         current_time = utime.localtime()
-        time_string = "{:02d}:{:02d}:{:02d}".format(current_time[3], current_time[4], current_time[5])
-        text_width = len(time_string) * 8  # 8 pixels per character
-        x = (DISPLAY_WIDTH - text_width) // 2
-        oled1.text(time_string, x, LINETHREE_Y)
+        oled1.text(time_string.format(current_time[3], current_time[4], current_time[5]), x, LINETHREE_Y)
         oled1.show()
         await asyncio.sleep(1)  # Update every second
 
@@ -123,6 +126,8 @@ async def main():
 
     clear_display()
 
+    clock_task = asyncio.create_task(display_clock())
+
     while True:
         if rail_data_instance.nrcc_message:
             print("NRCC alert:", rail_data_instance.nrcc_message, "\n")
@@ -134,7 +139,7 @@ async def main():
                 oled1.text(rail_data_instance.departures_list[0]["time_due"], 88, LINEONE_Y)
                 # print(format_calling_points(rail_data_instance.departures_list[0]))
                 if not call_point_task or call_point_task.done():
-                    call_point_task = asyncio.create_task(scroll_text(format_calling_points(rail_data_instance.departures_list[0]), LINETWO_Y, 4))
+                    call_point_task = asyncio.create_task(scroll_text(format_calling_points(rail_data_instance.departures_list[0]), LINETWO_Y, 2))
 
             # if len(rail_data_instance.departures_list) > 1:
             #     oled.text(rail_data_instance.departures_list[1]["destination"], 0, LINETWO_Y)
@@ -144,16 +149,17 @@ async def main():
         else:
             oled1.text("No departures", 0, LINEONE_Y)
 
-        if clock_mode:
-            if clock_task:
-                clock_task.cancel()
-            scroll_task = asyncio.create_task(scroll_text_and_pause())
-        else:
-            if scroll_task:
-                scroll_task.cancel()
-            clock_task = asyncio.create_task(display_clock())
+        # TODO: Repurpose this to alternate line two between calling points and second-next train
+        # if clock_mode:
+        #     if clock_task:
+        #         clock_task.cancel()
+        #     scroll_task = asyncio.create_task(scroll_text_and_pause())
+        # else:
+        #     if scroll_task:
+        #         scroll_task.cancel()
+        #     clock_task = asyncio.create_task(display_clock())
 
-        clock_mode = not clock_mode
+        # clock_mode = not clock_mode
         await asyncio.sleep(8)  # Switch tasks every X seconds
 
 if __name__ == "__main__":

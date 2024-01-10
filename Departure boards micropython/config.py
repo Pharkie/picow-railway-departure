@@ -16,9 +16,9 @@ DISPLAY_WIDTH = 128
 DISPLAY_HEIGHT = 32
 LINE_HEIGHT = 12
 
-INFO_STRINGS = [
-    "Be alert. See it. Say it. Sorted.",
-    "Mind the gap",
-    "Stand behind the yellow line",
-    "Please have your ticket ready",
-]
+# INFO_STRINGS = [
+#     "Be alert. See it. Say it. Sorted.",
+#     "Mind the gap",
+#     "Stand behind the yellow line",
+#     "Please have your ticket ready",
+# ]
