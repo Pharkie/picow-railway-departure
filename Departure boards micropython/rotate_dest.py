@@ -4,7 +4,7 @@ import utime
 import ujson
 import urequests
 from ssd1306 import SSD1306_I2C
-from wifi_creds import WIFI_SSID, WIFI_PASSWORD
+from credentials import WIFI_SSID, WIFI_PASSWORD
 
 WIDTH = 128
 HEIGHT = 32

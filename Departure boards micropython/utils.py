@@ -9,7 +9,7 @@ License: GNU General Public License (GPL)
 """
 import network # type: ignore
 import utime # type: ignore
-from wifi_creds import WIFI_SSID, WIFI_PASSWORD
+from credentials import WIFI_SSID, WIFI_PASSWORD
 
 def connect_wifi():
     print("connect_wifi() called")

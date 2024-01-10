@@ -106,5 +106,5 @@ async def sync_rtc_periodically():
         # Calculate seconds until the top of the next hour, then add a random offset
         next_sync_secs = 3600 - current_time[5] - (60 * current_time[4]) + urandom.randint(0, 59)
         
-        print(f"sync_ntp_periodically() complete. Next sync in (secs): {next_sync_secs} secs")
+        print(f"sync_ntp_periodically() complete. Next sync in: {next_sync_secs} secs")
         await asyncio.sleep(next_sync_secs)  # Sleep for the calculated duration
