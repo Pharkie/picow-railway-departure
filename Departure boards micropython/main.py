@@ -17,7 +17,7 @@ import utils
 import rail_data
 import urandom
 from ssd1306 import SSD1306_I2C
-from config import LINEONE_Y, LINETWO_Y, LINETHREE_Y, DISPLAY_WIDTH, DISPLAY_HEIGHT, LINE_HEIGHT, INFO_STRINGS
+from config import LINEONE_Y, LINETWO_Y, LINETHREE_Y, DISPLAY_WIDTH, DISPLAY_HEIGHT, LINE_HEIGHT
 from globals import oled1
 
 def setup_display():
@@ -74,12 +74,6 @@ async def scroll_text(text, y, speed=2):
         await asyncio.sleep(0.01)  # Delay between frames
     await asyncio.sleep(3) # Pause after finished scrolling
 
-async def scroll_text_and_pause():
-    # print("scroll_text_and_pause() called")
-    while True:
-        text = random.choice(INFO_STRINGS)
-        await scroll_text(text, LINETHREE_Y, 2)
-
 async def run_periodically(func, wait_seconds):
     await asyncio.sleep(wait_seconds)
     while True:
@@ -110,12 +104,7 @@ def format_calling_points(departure):
 async def main():
     # print("aysnc main() called")
     rail_data_instance = rail_data.RailData()
-    
-    clock_task = None
-    scroll_task = None
-    call_point_task = None
-    clock_mode = True # Setting to True shows message first
-    
+  
     # At startup, run both functions once and wait
     await datetime_utils.sync_rtc()
     await rail_data_instance.get_rail_data()
@@ -132,35 +121,26 @@ async def main():
         if rail_data_instance.nrcc_message:
             print("NRCC alert:", rail_data_instance.nrcc_message, "\n")
 
-        if rail_data_instance.departures_list is not None:
-            if len(rail_data_instance.departures_list) > 0:
-                oled1.text(rail_data_instance.departures_list[0]["destination"], 0, LINEONE_Y)
-                oled1.fill_rect(85, LINEONE_Y, DISPLAY_WIDTH, LINE_HEIGHT, 0)
-                oled1.text(rail_data_instance.departures_list[0]["time_due"], 88, LINEONE_Y)
-                # print(format_calling_points(rail_data_instance.departures_list[0]))
-                if not call_point_task or call_point_task.done():
-                    call_point_task = asyncio.create_task(scroll_text(format_calling_points(rail_data_instance.departures_list[0]), LINETWO_Y, 2))
-
-            # if len(rail_data_instance.departures_list) > 1:
-            #     oled.text(rail_data_instance.departures_list[1]["destination"], 0, LINETWO_Y)
-            #     oled.fill_rect(85, LINETWO_Y, DISPLAY_WIDTH, LINE_HEIGHT, 0)
-            #     oled.text(rail_data_instance.departures_list[1]["time_due"], 88, LINETWO_Y)
-            
+        if len(rail_data_instance.departures_list) > 0:
+            oled1.text(rail_data_instance.departures_list[0]["destination"], 0, LINEONE_Y)
+            oled1.fill_rect(85, LINEONE_Y, DISPLAY_WIDTH, LINE_HEIGHT, 0)
+            oled1.text(rail_data_instance.departures_list[0]["time_due"], 88, LINEONE_Y)
+            oled1.show()
+            # print(format_calling_points(rail_data_instance.departures_list[0]))
+            await scroll_text(format_calling_points(rail_data_instance.departures_list[0]), LINETWO_Y, 2)
+            await asyncio.sleep(1)
         else:
             oled1.text("No departures", 0, LINEONE_Y)
+            oled1.show()
 
-        # TODO: Repurpose this to alternate line two between calling points and second-next train
-        # if clock_mode:
-        #     if clock_task:
-        #         clock_task.cancel()
-        #     scroll_task = asyncio.create_task(scroll_text_and_pause())
-        # else:
-        #     if scroll_task:
-        #         scroll_task.cancel()
-        #     clock_task = asyncio.create_task(display_clock())
-
-        # clock_mode = not clock_mode
-        await asyncio.sleep(8)  # Switch tasks every X seconds
+        if len(rail_data_instance.departures_list) > 1:
+            oled1.text(rail_data_instance.departures_list[1]["destination"], 0, LINETWO_Y)
+            oled1.fill_rect(85, LINETWO_Y, DISPLAY_WIDTH, LINE_HEIGHT, 0)
+            oled1.text(rail_data_instance.departures_list[1]["time_due"], 88, LINETWO_Y)
+            oled1.show()
+            await asyncio.sleep(8)
+            
+        await asyncio.sleep(8)  # Wait before repeat
 
 if __name__ == "__main__":
     setup_display()
