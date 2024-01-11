@@ -62,16 +62,13 @@ async def display_clock(oled):
     time_string = "{:02d}:{:02d}:{:02d}"
     text_width = len(time_string.format(0, 0, 0)) * 8  # 8 pixels per character
     centre_x = (DISPLAY_WIDTH - text_width) // 2
-    last_time = None
 
     while True:
         current_time = utime.localtime()
-        if last_time != current_time: # Only update the display if the time has changed
-            # Clear only the area where the time is displayed
-            oled.fill_rect(centre_x, LINETHREE_Y, text_width, 8, 0)
-            oled.text(time_string.format(current_time[3], current_time[4], current_time[5]), centre_x, LINETHREE_Y)
-            oled.show()
-            last_time = current_time
+        # Clear where the time is displayed
+        oled.fill_rect(centre_x, LINETHREE_Y, text_width, 8, 0)
+        oled.text(time_string.format(current_time[3], current_time[4], current_time[5]), centre_x, LINETHREE_Y)
+        oled.show()  
         await asyncio.sleep(1)  # Update every second
 
 async def display_travel_alert(oled, rail_data_instance, clock_task):
@@ -129,7 +126,7 @@ async def display_travel_alert(oled, rail_data_instance, clock_task):
 
         time.sleep(3)  # Wait 3 seconds without yielding to the event loop
     
-    clock_task = asyncio.create_task(display_clock(oled1))
+    clock_task = asyncio.create_task(display_clock(oled))
 
 """
 This function combines the clock to save resources and task switching to help the scroll be smooth.
@@ -146,7 +143,7 @@ async def scroll_text_with_clock(oled, text, y, speed=5): # Speed is 1-5, 1 bein
     last_time = None
     
     for x in range(DISPLAY_WIDTH, -(text_width+1), -2):
-        clear_line(oled1, y)
+        clear_line(oled, y)
         oled.text(text, x, y)
 
         current_time = utime.localtime()
@@ -204,6 +201,8 @@ def display_centred_text(oled, text, y):
 async def display_first_departure(oled, rail_data_instance, clock_task):
     departures = rail_data_instance.oled1_departures if oled == oled1 else rail_data_instance.oled2_departures
 
+    # print(f"Displaying first departure for: {oled} = {departures}")
+
     clear_line(oled, LINEONE_Y)
     oled.text("1 " + departures[0]["destination"], 0, LINEONE_Y)
     oled.fill_rect(85, LINEONE_Y, DISPLAY_WIDTH, LINE_HEIGHT, 0)
@@ -224,7 +223,7 @@ async def display_first_departure(oled, rail_data_instance, clock_task):
 
     clock_task.cancel() # Cancel the clock task so it doesn't interfere with the scrolling text
     await scroll_text_with_clock(oled, format_calling_points(departures[0]), LINETWO_Y)
-    clock_task = asyncio.create_task(display_clock(oled1))
+    clock_task = asyncio.create_task(display_clock(oled))
     await asyncio.sleep(3)
 
 async def display_no_departures(oled):
@@ -244,6 +243,25 @@ async def display_second_departure(oled, rail_data_instance):
     oled.show()
     await asyncio.sleep(4)
 
+async def run_oled(oled, rail_data_instance, clock_task):
+    while True:
+        departures = rail_data_instance.oled1_departures if oled == oled1 else rail_data_instance.oled2_departures
+
+        # Show first departure for each screen on line one, and scroll the calling points on line two
+        if len(departures) > 0:
+            await display_first_departure(oled, rail_data_instance, clock_task)
+        else:
+            await display_no_departures(oled)
+
+        # If there is a second departure for this screen, show it on line two
+        if len(departures) > 1:
+            await display_second_departure(oled, rail_data_instance)
+
+        if rail_data_instance.nrcc_message:
+            await display_travel_alert(oled, rail_data_instance, clock_task)
+        else:
+            await asyncio.sleep(3)
+
 async def main():
     # print("main() called")
     rail_data_instance = rail_data.RailData()
@@ -257,28 +275,15 @@ async def main():
     asyncio.create_task(run_periodically(rail_data_instance.get_rail_data, urandom.randint(59, 119)))  # Run every 1-2 minutes
 
     clear_display(oled1)
+    clear_display(oled2)
 
     oled1_clock_task = asyncio.create_task(display_clock(oled1))
     oled2_clock_task = asyncio.create_task(display_clock(oled2))
 
-    while True:
-        await asyncio.gather(
-            display_first_departure(oled1, rail_data_instance, oled1_clock_task) if len(rail_data_instance.oled1_departures) > 0 else display_no_departures(oled1),
-            display_first_departure(oled2, rail_data_instance, oled2_clock_task) if len(rail_data_instance.oled2_departures) > 0 else display_no_departures(oled2)
-        )
-
-        await asyncio.gather(
-            display_second_departure(oled1, rail_data_instance) if len(rail_data_instance.oled1_departures) > 1 else asyncio.sleep(0),
-            display_second_departure(oled2, rail_data_instance) if len(rail_data_instance.oled2_departures) > 1 else asyncio.sleep(0)
-        )
-
-        if rail_data_instance.nrcc_message:
-            await asyncio.gather(
-                display_travel_alert(oled1, rail_data_instance, oled1_clock_task),
-                display_travel_alert(oled2, rail_data_instance, oled1_clock_task)
-            )
-        else:
-            await asyncio.sleep(3)
+    await asyncio.gather(
+        run_oled(oled1, rail_data_instance, oled1_clock_task),
+        run_oled(oled2, rail_data_instance, oled2_clock_task)
+    )
 
 if __name__ == "__main__":
     setup_displays()
