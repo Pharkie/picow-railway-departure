@@ -11,14 +11,14 @@ License: GNU General Public License (GPL)
 from machine import Pin, I2C
 import utime
 import uasyncio as asyncio
-import random
+import time
 import datetime_utils
 import utils
 import rail_data
 import urandom
 from ssd1306 import SSD1306_I2C
-from config import LINEONE_Y, LINETWO_Y, LINETHREE_Y, DISPLAY_WIDTH, DISPLAY_HEIGHT, LINE_HEIGHT
-from globals import oled1
+from config import LINEONE_Y, LINETWO_Y, LINETHREE_Y, DISPLAY_WIDTH, DISPLAY_HEIGHT, LINE_HEIGHT, CHAR_WIDTH
+from my_global_vars import oled1
 
 def setup_display():
     global oled1
@@ -64,15 +64,67 @@ async def display_clock():
         oled1.show()
         await asyncio.sleep(1)  # Update every second
 
-async def scroll_text(text, y, speed=2):
+async def display_travel_alert(message_text):
+    MAX_LINES_PER_SCREEN = 3
+    MAX_CHARS_PER_LINE = DISPLAY_WIDTH // CHAR_WIDTH  # Maximum number of characters per line
+    
+    alert_text = "Travel Alert"
+    centre_x = (DISPLAY_WIDTH - len(alert_text) * CHAR_WIDTH) // 2  # Center the text
+
+    words = message_text.split()
+    screens = []
+    screen = []
+    line = ''
+
+    oled1.fill(0)
+    # Flash the alert text before displaying the message
+    for _ in range(2):
+        oled1.text(alert_text, centre_x, LINETWO_Y)
+        oled1.show()
+        time.sleep(0.5)
+        oled1.fill(0)
+        oled1.show()
+        time.sleep(0.5)
+
+    for word in words:
+        if len(line) + len(word) + 1 > MAX_CHARS_PER_LINE:  # +1 for the space
+            screen.append(line)
+            line = ''
+
+            if len(screen) == MAX_LINES_PER_SCREEN:
+                screens.append(screen)
+                screen = []
+
+        line += ' ' + word if line else word  # Add space only if line is not empty
+
+    # Add the last line and screen if they're not empty
+    if line:
+        screen.append(line)
+    if screen:
+        screens.append(screen)
+
+    for screen in screens:
+        oled1.fill(0)  # Clear the display
+
+        for i, line in enumerate(screen):
+            oled1.text(line, 0, i * LINE_HEIGHT)
+
+        oled1.show()  # Update the display
+
+        time.sleep(3)  # Wait 3 seconds without yielding to the event loop
+
+async def scroll_text(text, y, speed=5): # Speed is 1-5, 1 being slowest
     # print(f"scroll_text() called with text: {text}")
-    text_width = len(text) * 8  # 8 pixels per character
-    for x in range(DISPLAY_WIDTH, -(text_width+1), -speed):
+    text_width = len(text) * CHAR_WIDTH
+    wait_secs = 0.01 + (speed - 1) * (0.001 - 0.01) / (5 - 1)
+    
+    for x in range(DISPLAY_WIDTH, -(text_width+1), -1):
         clear_line(y)
         oled1.text(text, x, y)
         oled1.show()
-        await asyncio.sleep(0.01)  # Delay between frames
-    await asyncio.sleep(3) # Pause after finished scrolling
+        await asyncio.sleep(wait_secs)  # Delay between frames
+    
+    await asyncio.sleep(3)  # Pause after finished scrolling
 
 async def run_periodically(func, wait_seconds):
     await asyncio.sleep(wait_seconds)
@@ -102,7 +154,7 @@ def format_calling_points(departure):
     return calling_points_text
 
 async def main():
-    # print("aysnc main() called")
+    # print("main() called")
     rail_data_instance = rail_data.RailData()
   
     # At startup, run both functions once and wait
@@ -118,29 +170,38 @@ async def main():
     clock_task = asyncio.create_task(display_clock())
 
     while True:
-        if rail_data_instance.nrcc_message:
-            print("NRCC alert:", rail_data_instance.nrcc_message, "\n")
-
+        # If there's a first departure, show it
         if len(rail_data_instance.departures_list) > 0:
-            oled1.text(rail_data_instance.departures_list[0]["destination"], 0, LINEONE_Y)
+            clear_line(LINEONE_Y)
+            oled1.text("1 " + rail_data_instance.departures_list[0]["destination"], 0, LINEONE_Y)
             oled1.fill_rect(85, LINEONE_Y, DISPLAY_WIDTH, LINE_HEIGHT, 0)
             oled1.text(rail_data_instance.departures_list[0]["time_due"], 88, LINEONE_Y)
             oled1.show()
             # print(format_calling_points(rail_data_instance.departures_list[0]))
-            await scroll_text(format_calling_points(rail_data_instance.departures_list[0]), LINETWO_Y, 2)
+            await scroll_text(format_calling_points(rail_data_instance.departures_list[0]), LINETWO_Y)
             await asyncio.sleep(1)
         else:
+            clear_line(LINEONE_Y)
             oled1.text("No departures", 0, LINEONE_Y)
             oled1.show()
+            await asyncio.sleep(12)
 
+        # If there's a second departure, show it - after calling points have scrolled on line two
         if len(rail_data_instance.departures_list) > 1:
+            clear_line(LINETWO_Y)
             oled1.text(rail_data_instance.departures_list[1]["destination"], 0, LINETWO_Y)
             oled1.fill_rect(85, LINETWO_Y, DISPLAY_WIDTH, LINE_HEIGHT, 0)
             oled1.text(rail_data_instance.departures_list[1]["time_due"], 88, LINETWO_Y)
             oled1.show()
-            await asyncio.sleep(8)
-            
-        await asyncio.sleep(8)  # Wait before repeat
+            await asyncio.sleep(4)
+
+        if rail_data_instance.nrcc_message:
+            print("Displaying travel alert:", rail_data_instance.nrcc_message, "\n")
+            clock_task.cancel()
+            await display_travel_alert(rail_data_instance.nrcc_message)
+            clock_task = asyncio.create_task(display_clock())
+        else:
+            await asyncio.sleep(3)
 
 if __name__ == "__main__":
     setup_display()

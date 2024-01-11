@@ -15,6 +15,9 @@ LINETHREE_Y = 24
 DISPLAY_WIDTH = 128
 DISPLAY_HEIGHT = 32
 LINE_HEIGHT = 12
+CHAR_WIDTH = 8  # Width of a character in pixels
+
+WIFI_TIMEOUT = 20  # Seconds
 
 # INFO_STRINGS = [
 #     "Be alert. See it. Say it. Sorted.",

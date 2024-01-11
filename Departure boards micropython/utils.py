@@ -10,8 +10,7 @@ License: GNU General Public License (GPL)
 import network # type: ignore
 import utime # type: ignore
 from credentials import WIFI_SSID, WIFI_PASSWORD
-from config import LINEONE_Y
-from globals import oled1
+from config import WIFI_TIMEOUT
 
 def connect_wifi():
     # print("connect_wifi() called")
@@ -31,15 +30,15 @@ def connect_wifi():
     # wlan.config(pm=0xa11140)
     wlan.connect(WIFI_SSID, WIFI_PASSWORD)
 
-    max_wait = 20
-    while max_wait > 0:
+    max_wait = waited = WIFI_TIMEOUT
+    while waited > 0:
         if wlan.status() < 0 or wlan.status() >= 3:
             break
-        max_wait -= 1
-        print("Waiting for Wifi to connect")
-        utime.sleep(0.6)
+        print(f"Waiting for Wifi to connect {max_wait + 1 - waited}/{max_wait}")
+        waited -= 1
+        utime.sleep(1)
 
-    if max_wait > 0:
+    if network.WLAN(network.STA_IF).isconnected():
         print("Wifi connected")
         # oled1.fill(0)
         # oled1.text("Wifi connected", 0, LINEONE_Y)
