@@ -2,8 +2,9 @@ import re
 import urequests
 import uasyncio as asyncio
 import utils
+import json
 from credentials import LDBWS_API_KEY
-from config import STATION_CRS, LDBWS_API_URL, PLATFORM_NUMBER, LINEONE_Y
+from config import STATION_CRS, LDBWS_API_URL, PLATFORM_NUMBER, offline_mode
 
 class RailData:
     def __init__(self):
@@ -17,61 +18,79 @@ class RailData:
         """
         response_JSON = None
 
+        # Get data
+        if offline_mode:
+            try:
+                with open("sample_data.json", "r") as sample_data_file:
+                    response_JSON = json.load(sample_data_file)
+            except FileNotFoundError:
+                print("Error: could not find file 'sample_data.json'.")
+            except IOError as e:
+                print(f"Error: problem reading 'sample_data.json': {e}")
+        else:
+            try:
+                assert utils.is_wifi_connected(), "Wifi not connected"
+                
+                api_url = f"{LDBWS_API_URL}/{STATION_CRS}"
+                request_headers = {"x-apikey": LDBWS_API_KEY}
+                response = urequests.get(url=api_url, headers=request_headers, timeout=10)
+                response_JSON = response.json()
+
+                # Essential or we get ENOMEM errors. Don't switch for one line responseJSON = urequests.get().json()
+                response.close()
+                del response # Free up memory
+
+                # print(f"get_rail_data() got response: {response_JSON}")
+            except Exception as e:
+                print(f"Error fetching rail data: {e}")
+
+        # Parse data and load into class variables
         try:
-            assert utils.is_wifi_connected(), "Wifi not connected"
-               
-            api_url = f"{LDBWS_API_URL}/{STATION_CRS}"
-            request_headers = {"x-apikey": LDBWS_API_KEY}
-            response = urequests.get(url=api_url, headers=request_headers, timeout=10)
-            response_JSON = response.json()
-
-            # Essential or we get ENOMEM errors. Don't switch for one line responseJSON = urequests.get().json()
-            response.close()
-            del response # Free up memory
-
-            # print(f"get_rail_data() got response: {response_JSON}")
-
-            parsed_data = self.parse_api_data(response_JSON)
-            self.nrcc_message = parsed_data["nrcc_message"]
-            self.departures_list = parsed_data["departures"]
-
-            # print(f"get_rail_data() got departures_list: {self.departures_list}")
-            print(f"get_rail_data() got info for {len(self.departures_list)} departures")
+            parsed_data = self.parse_rail_data(response_JSON)
+            self.nrcc_message = parsed_data.get("nrcc_message", "")
+            self.departures_list = parsed_data.get("departures", [])
         except Exception as e:
-            print(f"Error fetching LDBWS rail data: {e}")
+            print(f"Error parsing rail data: {e}")
 
-    def parse_api_data(self, api_data):
+        # print(f"get_rail_data() got departures_list: {self.departures_list}")
+        print(f"get_rail_data() got {len(self.departures_list)} departure(s)")
+
+    def parse_rail_data(self, data_JSON):
         """
-        Get the first two departures and any NRCC message from the National Rail API for the station and platform specified.
+        Parse the rail data to get the first two departures for the station and platform specified in config.py
+        Within the next 120 minutes (default/max)
+        Plus any NRCC Travel Alert message.
         """
         parsed_data = {"departures": [], "nrcc_message": ""}
 
-        if api_data:
-            train_services = api_data.get("trainServices")
+        if data_JSON:
+            train_services = data_JSON.get("trainServices")
             if train_services:
-                num_departures = min(2, len(train_services))
-                parsed_data["departures"] = [{
-                    "destination": train_services[i].get("destination", [{}])[0].get("locationName"),
-                    "time_due": train_services[i].get("std"),
-                    "subsequentCallingPoints": [
-                        {
-                            "locationName": calling_point.get("locationName"),
-                            "time_due": calling_point.get("st")
-                        } for calling_point in train_services[i].get("subsequentCallingPoints", [{}])[0].get("callingPoint", [])
-                    ]
-                } for i in range(num_departures) if train_services[i].get("platform") == PLATFORM_NUMBER]
+                departures = [
+                    {
+                        "destination": service.get("destination", [{}])[0].get("locationName"),
+                        "time_scheduled": service.get("std"),
+                        "time_estimated": service.get("etd"),
+                        "operator": service.get("operator"),
+                        "subsequentCallingPoints": [
+                            {
+                                "locationName": calling_point.get("locationName"),
+                                "time_scheduled": calling_point.get("st"),
+                                "time_estimated": calling_point.get("et")
+                            } for calling_point in service.get("subsequentCallingPoints", [{}])[0].get("callingPoint", [])
+                        ]
+                    } for service in train_services if service.get("platform") == PLATFORM_NUMBER
+                ]
+                parsed_data["departures"] = departures[:2]
 
-            nrcc_messages = api_data.get("nrccMessages")
+            nrcc_messages = data_JSON.get("nrccMessages")
             if nrcc_messages:
-                # Get the NRCC message
                 parsed_data["nrcc_message"] = nrcc_messages[0].get("Value", "")
-                # Remove HTML tags
                 parsed_data["nrcc_message"] = re.sub('<.*?>', '', parsed_data["nrcc_message"])
 
         return parsed_data
     
 if __name__ == "__main__":
     # utils.connect_wifi()
-    setup_display()
     rail_data_instance = RailData()  # Replace RailData with the actual class name
     print(rail_data_instance.get_rail_data())

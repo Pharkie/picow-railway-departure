@@ -10,11 +10,12 @@ License: GNU General Public License (GPL)
 import network # type: ignore
 import utime # type: ignore
 from credentials import WIFI_SSID, WIFI_PASSWORD
-from config import WIFI_TIMEOUT
+from config import WIFI_TIMEOUT, LINEONE_Y, LINETWO_Y, LINETHREE_Y, offline_mode, LINE_HEIGHT, CHAR_WIDTH
 
-def connect_wifi():
+def connect_wifi(oled_display=None):
     # print("connect_wifi() called")
-
+    global offline_mode
+    
     wlan = network.WLAN(network.STA_IF)
     
     # Deactivate and then reactivate the WiFi interface for a complete reset
@@ -35,19 +36,25 @@ def connect_wifi():
         if wlan.status() < 0 or wlan.status() >= 3:
             break
         print(f"Waiting for Wifi to connect {max_wait + 1 - waited}/{max_wait}")
+        oled_display.fill(0)
+        oled_display.text(f"Connecting wifi", 0, LINEONE_Y)
+        oled_display.text(f"{max_wait + 1 - waited}/{max_wait}", 50, LINETWO_Y)
+        oled_display.show()
         waited -= 1
         utime.sleep(1)
 
+    oled_display.fill(0)
     if network.WLAN(network.STA_IF).isconnected():
         print("Wifi connected")
-        # oled1.fill(0)
-        # oled1.text("Wifi connected", 0, LINEONE_Y)
-        # oled1.show()
+        oled_display.text("Wifi connected", 0, LINEONE_Y)
+        oled_display.text(":)", 56, LINETWO_Y)
     else:
         print("Wifi not connected: timed out")
-        # oled1.fill(0)
-        # oled1.text("Wifi not connected", 0, LINEONE_Y)
-        # oled1.show()
+        offline_mode = True
+        oled_display.text("No wifi :(", 24, LINEONE_Y)
+        oled_display.text("Switching to", 0, LINETWO_Y)
+        oled_display.text("offline mode", 0, LINETHREE_Y)
+    oled_display.show()
     
 def is_wifi_connected():
     is_it = network.WLAN(network.STA_IF).isconnected()

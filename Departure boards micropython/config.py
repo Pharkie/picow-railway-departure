@@ -7,6 +7,8 @@ LDBWS_API_URL = ( # National Rail API URL. On two lines for readability.
     "/1010-live-departure-board-dep/LDBWS/api/20220120/GetDepBoardWithDetails"
 )
 
+offline_mode = False  # Set to True to use sample_data.json instead of the live API. Not a constant since could be changed at runtime.
+
 # OLED screen params (SSD1306)
 LINEONE_Y = 0
 LINETWO_Y = 12

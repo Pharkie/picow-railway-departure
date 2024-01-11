@@ -10,9 +10,10 @@ License: GNU General Public License (GPL)
 import utime # type: ignore
 import ntptime # type: ignore
 import uasyncio as asyncio # type: ignore
-import urandom  # type: ignore
 import utils
 import machine # type: ignore
+import random
+from config import offline_mode
 
 def format_date(dt):
     # Format the date as 'DD MMM YYYY'.
@@ -73,24 +74,33 @@ def get_time_values(current_time_tuple=None):
 
 async def sync_rtc():
     # Sync RTC to NTP, then add an hour if it's DST and update the RTC
-    try:
-        if not utils.is_wifi_connected():
-            raise Exception("Wi-Fi is not connected")
-
-        ntptime.settime()
-
-        # Work out if we're in DST and if so, add an hour to the RTC
-        current_timestamp = utime.time()
-
-        is_DST_flag = is_DST(current_timestamp)
-
-        if is_DST_flag:
-            current_timestamp += 3600
-
-        # print(f"current_timestamp: {current_timestamp} and as tuple: {utime.localtime(current_timestamp)}")
+    if offline_mode:
+        # Generate random values for hours, minutes, and seconds
+        hours = random.randint(0, 23)
+        minutes = random.randint(0, 59)
+        seconds = random.randint(0, 59)
+        print(f"Offline mode: setting a random time {hours:02d}:{minutes:02d}:{seconds:02d}")
         rtc = machine.RTC()
-        # rtc.datetime() param is a different format of tuple to utime.localtime() so below converts it
-        rtc.datetime((utime.localtime(current_timestamp)[0], utime.localtime(current_timestamp)[1], utime.localtime(current_timestamp)[2], utime.localtime(current_timestamp)[6], utime.localtime(current_timestamp)[3], utime.localtime(current_timestamp)[4], utime.localtime(current_timestamp)[5], 0))
-        print(f"RTC time set from NTP with DST: {is_DST_flag} ")
-    except Exception as e:
-        print(f"Failed to set time: {e}")
+        # Set the RTC to the random time
+        rtc.datetime((2023, 1, 1, 0, hours, minutes, seconds, 0))
+    else:
+        try:
+            if not utils.is_wifi_connected():
+                raise Exception("Wifi not connected")
+
+            ntptime.settime()
+
+            # Work out if we're in DST and if so, add an hour to the RTC
+            current_timestamp = utime.time()
+
+            is_DST_flag = is_DST(current_timestamp)
+
+            if is_DST_flag:
+                current_timestamp += 3600
+
+            rtc = machine.RTC()
+            # rtc.datetime() param is a different format of tuple to utime.localtime() so below converts it
+            rtc.datetime((utime.localtime(current_timestamp)[0], utime.localtime(current_timestamp)[1], utime.localtime(current_timestamp)[2], utime.localtime(current_timestamp)[6], utime.localtime(current_timestamp)[3], utime.localtime(current_timestamp)[4], utime.localtime(current_timestamp)[5], 0))
+            print(f"RTC time set from NTP with DST: {is_DST_flag} ")
+        except Exception as e:
+            print(f"Failed to set RTC from NTP: {e}")

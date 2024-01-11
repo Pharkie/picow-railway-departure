@@ -17,7 +17,7 @@ import utils
 import rail_data
 import urandom
 from ssd1306 import SSD1306_I2C
-from config import LINEONE_Y, LINETWO_Y, LINETHREE_Y, DISPLAY_WIDTH, DISPLAY_HEIGHT, LINE_HEIGHT, CHAR_WIDTH
+from config import LINEONE_Y, LINETWO_Y, LINETHREE_Y, DISPLAY_WIDTH, DISPLAY_HEIGHT, LINE_HEIGHT, CHAR_WIDTH, offline_mode
 from my_global_vars import oled1
 
 def setup_display():
@@ -53,15 +53,17 @@ def clear_line(y):
 async def display_clock():
     time_string = "{:02d}:{:02d}:{:02d}"
     text_width = len(time_string.format(0, 0, 0)) * 8  # 8 pixels per character
-    x = (DISPLAY_WIDTH - text_width) // 2
+    centre_x = (DISPLAY_WIDTH - text_width) // 2
+    last_time = None
 
     while True:
-        # Clear only the area where the time is displayed
-        oled1.fill_rect(x, LINETHREE_Y, text_width, 8, 0)
-
         current_time = utime.localtime()
-        oled1.text(time_string.format(current_time[3], current_time[4], current_time[5]), x, LINETHREE_Y)
-        oled1.show()
+        if last_time != current_time: # Only update the display if the time has changed
+            # Clear only the area where the time is displayed
+            oled1.fill_rect(centre_x, LINETHREE_Y, text_width, 8, 0)
+            oled1.text(time_string.format(current_time[3], current_time[4], current_time[5]), centre_x, LINETHREE_Y)
+            oled1.show()
+            last_time = current_time
         await asyncio.sleep(1)  # Update every second
 
 async def display_travel_alert(message_text):
@@ -113,18 +115,37 @@ async def display_travel_alert(message_text):
 
         time.sleep(3)  # Wait 3 seconds without yielding to the event loop
 
-async def scroll_text(text, y, speed=5): # Speed is 1-5, 1 being slowest
+"""
+This function combines the clock to save resources and task switching to help the scroll be smooth.
+"""
+async def scroll_text_with_clock(text, y, speed=5): # Speed is 1-5, 1 being slowest
     # print(f"scroll_text() called with text: {text}")
     text_width = len(text) * CHAR_WIDTH
-    wait_secs = 0.01 + (speed - 1) * (0.001 - 0.01) / (5 - 1)
+    wait_secs = 0.02 + (speed - 1) * (0.005 - 0.02) / (5 - 1)
+
+    time_string = "{:02d}:{:02d}:{:02d}"
+    clock_text_width = len(time_string.format(0, 0, 0)) * 8  # 8 pixels per character
+
+    clock_centre_x = (DISPLAY_WIDTH - clock_text_width) // 2
+    last_time = None
     
-    for x in range(DISPLAY_WIDTH, -(text_width+1), -1):
+    for x in range(DISPLAY_WIDTH, -(text_width+1), -2):
         clear_line(y)
         oled1.text(text, x, y)
+
+        current_time = utime.localtime()
+        if last_time != current_time: # Only update the display if the time has changed
+            # Clear only the area where the time is displayed
+            oled1.fill_rect(clock_centre_x, LINETHREE_Y, clock_text_width, 8, 0)
+            oled1.text(time_string.format(current_time[3], current_time[4], current_time[5]), clock_centre_x, LINETHREE_Y)
+
+            # print(f"Displaying time {time_string.format(current_time[3], current_time[4], current_time[5]), centre_x}")
+
+            last_time = current_time
+        
         oled1.show()
+
         await asyncio.sleep(wait_secs)  # Delay between frames
-    
-    await asyncio.sleep(3)  # Pause after finished scrolling
 
 async def run_periodically(func, wait_seconds):
     await asyncio.sleep(wait_seconds)
@@ -134,22 +155,26 @@ async def run_periodically(func, wait_seconds):
 
 def format_calling_points(departure):
     calling_points = departure['subsequentCallingPoints']
+
     if not calling_points:
-        return "Calling at destination only"
+        return f"Calling at destination only. Operator: {operator}"
     
     # Format all but the last calling point
     calling_points_text = "Calling at: " + ', '.join(
-        f"{calling_point['locationName']} ({calling_point['time_due']})"
+        f"{calling_point['locationName']} ({calling_point['time_scheduled']})"
         for calling_point in calling_points[:-1]
     )
     
     # Add 'and' before the last calling point
-    last_calling_point = f"{calling_points[-1]['locationName']} ({calling_points[-1]['time_due']})"
+    last_calling_point = f"{calling_points[-1]['locationName']} ({calling_points[-1]['time_scheduled']})"
 
     if calling_points_text:
         calling_points_text += f" and {last_calling_point}"
     else:
         calling_points_text = f"Calling at: {last_calling_point}"
+    
+    # Add operator at the end
+    calling_points_text += f" ({departure['operator']})"
     
     return calling_points_text
 
@@ -175,11 +200,20 @@ async def main():
             clear_line(LINEONE_Y)
             oled1.text("1 " + rail_data_instance.departures_list[0]["destination"], 0, LINEONE_Y)
             oled1.fill_rect(85, LINEONE_Y, DISPLAY_WIDTH, LINE_HEIGHT, 0)
-            oled1.text(rail_data_instance.departures_list[0]["time_due"], 88, LINEONE_Y)
+            oled1.text(rail_data_instance.departures_list[0]["time_scheduled"], 88, LINEONE_Y)
             oled1.show()
-            # print(format_calling_points(rail_data_instance.departures_list[0]))
-            await scroll_text(format_calling_points(rail_data_instance.departures_list[0]), LINETWO_Y)
-            await asyncio.sleep(1)
+            await asyncio.sleep(3)
+
+            time_estimated = rail_data_instance.departures_list[0]["time_estimated"]
+
+            clock_task.cancel() # Cancel the clock task so it doesn't interfere with the scrolling text
+            if time_estimated != "On time":
+                await scroll_text_with_clock(f"Estimated arrival: {time_estimated}", LINETWO_Y)
+                await asyncio.sleep(3)
+
+            await scroll_text_with_clock(format_calling_points(rail_data_instance.departures_list[0]), LINETWO_Y)
+            clock_task = asyncio.create_task(display_clock())
+            await asyncio.sleep(3)
         else:
             clear_line(LINEONE_Y)
             oled1.text("No departures", 0, LINEONE_Y)
@@ -189,9 +223,9 @@ async def main():
         # If there's a second departure, show it - after calling points have scrolled on line two
         if len(rail_data_instance.departures_list) > 1:
             clear_line(LINETWO_Y)
-            oled1.text(rail_data_instance.departures_list[1]["destination"], 0, LINETWO_Y)
+            oled1.text("2 " + rail_data_instance.departures_list[1]["destination"], 0, LINETWO_Y)
             oled1.fill_rect(85, LINETWO_Y, DISPLAY_WIDTH, LINE_HEIGHT, 0)
-            oled1.text(rail_data_instance.departures_list[1]["time_due"], 88, LINETWO_Y)
+            oled1.text(rail_data_instance.departures_list[1]["time_scheduled"], 88, LINETWO_Y)
             oled1.show()
             await asyncio.sleep(4)
 
@@ -205,6 +239,15 @@ async def main():
 
 if __name__ == "__main__":
     setup_display()
-    utils.connect_wifi()
+
+    if offline_mode:
+        time.sleep(1)
+        oled1.fill(0)
+        oled1.text("Config set for", 0, LINEONE_Y)
+        oled1.text("offline mode", 0, LINETWO_Y)
+        oled1.show()
+        time.sleep(3)
+    else:
+        utils.connect_wifi(oled1)
 
     asyncio.run(main())
