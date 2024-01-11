@@ -1,6 +1,7 @@
 STATION_CRS = "PMW"  # Station's CRS code
 
-PLATFORM_NUMBER = "2"  # Platform number to show departures for. Note: string not an integer.
+OLED1_PLATFORM_NUMBER = "1"  # Platform number to show departures for. Note: string not an integer.
+OLED2_PLATFORM_NUMBER = "2"  # Platform number to show departures for. Note: string not an integer.
 
 LDBWS_API_URL = ( # National Rail API URL. On two lines for readability.
     "https://api1.raildata.org.uk"

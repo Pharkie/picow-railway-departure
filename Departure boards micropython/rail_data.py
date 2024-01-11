@@ -4,30 +4,23 @@ import uasyncio as asyncio
 import utils
 import json
 from credentials import LDBWS_API_KEY
-from config import STATION_CRS, LDBWS_API_URL, PLATFORM_NUMBER, offline_mode
+from config import STATION_CRS, LDBWS_API_URL, OLED1_PLATFORM_NUMBER, offline_mode
 
 class RailData:
     def __init__(self):
         # self.nrcc_message = "Some long sample text would go here if there was a possibility that there were problems on the rail network somewhere I think?"
         self.nrcc_message = ""
-        self.departures_list = []
+        self.oled1_departures = []
 
     async def get_rail_data(self):
         """
         Get data from the National Rail API.
         """
+        global offline_mode
         response_JSON = None
 
         # Get data
-        if offline_mode:
-            try:
-                with open("sample_data.json", "r") as sample_data_file:
-                    response_JSON = json.load(sample_data_file)
-            except FileNotFoundError:
-                print("Error: could not find file 'sample_data.json'.")
-            except IOError as e:
-                print(f"Error: problem reading 'sample_data.json': {e}")
-        else:
+        if not offline_mode:
             try:
                 assert utils.is_wifi_connected(), "Wifi not connected"
                 
@@ -42,18 +35,27 @@ class RailData:
 
                 # print(f"get_rail_data() got response: {response_JSON}")
             except Exception as e:
-                print(f"Error fetching rail data: {e}")
+                print(f"Error fetching rail data: {e}. Switching to offline mode.")
+                offline_mode = True
+        elif offline_mode:
+            try:
+                with open("sample_data.json", "r") as sample_data_file:
+                    response_JSON = json.load(sample_data_file)
+            except FileNotFoundError:
+                print("Error: could not find file 'sample_data.json'.")
+            except IOError as e:
+                print(f"Error: problem reading 'sample_data.json': {e}")
 
         # Parse data and load into class variables
         try:
             parsed_data = self.parse_rail_data(response_JSON)
             self.nrcc_message = parsed_data.get("nrcc_message", "")
-            self.departures_list = parsed_data.get("departures", [])
+            self.oled1_departures = parsed_data.get("departures", [])
         except Exception as e:
             print(f"Error parsing rail data: {e}")
 
         # print(f"get_rail_data() got departures_list: {self.departures_list}")
-        print(f"get_rail_data() got {len(self.departures_list)} departure(s)")
+        print(f"get_rail_data() got {len(self.oled1_departures)} departure(s)")
 
     def parse_rail_data(self, data_JSON):
         """
@@ -78,7 +80,7 @@ class RailData:
                                 "time_due": calling_point.get("et") if calling_point.get("et") != "On time" else calling_point.get("st"),
                             } for calling_point in service.get("subsequentCallingPoints", [{}])[0].get("callingPoint", [])
                         ]
-                    } for service in train_services if service.get("platform") == PLATFORM_NUMBER
+                    } for service in train_services if service.get("platform") == OLED1_PLATFORM_NUMBER
                 ]
                 parsed_data["departures"] = departures[:2]
 

@@ -18,30 +18,38 @@ import rail_data
 import urandom
 from ssd1306 import SSD1306_I2C
 from config import LINEONE_Y, LINETWO_Y, LINETHREE_Y, DISPLAY_WIDTH, DISPLAY_HEIGHT, LINE_HEIGHT, CHAR_WIDTH, offline_mode
-from my_global_vars import oled1
+from my_global_vars import oled1, oled2
+
+def initialize_oled(i2c, display_name):
+    try:
+        devices = i2c.scan()
+        if devices:
+            print(f"I2C found for {display_name}: {hex(i2c.scan()[0]).upper()}. Config: {str(i2c)}")
+        else:
+            print(f"No I2C devices found on {display_name}.")
+
+        oled = SSD1306_I2C(DISPLAY_WIDTH, DISPLAY_HEIGHT, i2c)
+        oled.fill(0)
+        oled.text("Loading", 0, LINEONE_Y)
+        oled.text("Pico departures", 0, LINETWO_Y)
+        oled.show()
+
+        return oled
+    except Exception as e:
+        print(f"Failed to initialize {display_name}. Error: {str(e)}")
+        return None
 
 def setup_display():
-    global oled1
+    global oled1, oled2
 
-    i2c = I2C(0, scl=Pin(17), sda=Pin(16), freq=200000)
+    i2c_oled1 = I2C(0, scl=Pin(17), sda=Pin(16), freq=200000)
+    i2c_oled2 = I2C(1, scl=Pin(19), sda=Pin(18), freq=200000)
 
-    devices = i2c.scan()
+    oled1 = initialize_oled(i2c_oled1, "oled1")
+    oled2 = initialize_oled(i2c_oled2, "oled2")
 
-    if devices:
-        print("I2C found as follows.")
-        for d in devices:
-            print("     Device at address: " + hex(d))
-    else:
-        print("No I2C devices found.")
-
-    print("I2C Address      : " + hex(i2c.scan()[0]).upper())
-    print("I2C Configuration: " + str(i2c))
-
-    oled1 = SSD1306_I2C(DISPLAY_WIDTH, DISPLAY_HEIGHT, i2c)
-    oled1.fill(0)
-    oled1.text("Loading", 0, LINEONE_Y)
-    oled1.text("Pico departures", 0, LINETWO_Y)
-    oled1.show()
+    if oled2 is None:
+        print("No oled2. Skipping operations on second screen.")
 
 def clear_display():
     oled1.fill(0)
@@ -246,12 +254,12 @@ async def main():
     clock_task = asyncio.create_task(display_clock())
 
     while True:
-        if len(rail_data_instance.departures_list) > 0:
+        if len(rail_data_instance.oled1_departures) > 0:
             await display_first_departure(rail_data_instance, clock_task)
         else:
             await display_no_departures()
 
-        if len(rail_data_instance.departures_list) > 1:
+        if len(rail_data_instance.oled1_departures) > 1:
             await display_second_departure(rail_data_instance)
 
         if rail_data_instance.nrcc_message:
