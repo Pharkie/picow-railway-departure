@@ -75,8 +75,7 @@ class RailData:
                         "subsequentCallingPoints": [
                             {
                                 "locationName": calling_point.get("locationName"),
-                                "time_scheduled": calling_point.get("st"),
-                                "time_estimated": calling_point.get("et")
+                                "time_due": calling_point.get("et") if calling_point.get("et") != "On time" else calling_point.get("st"),
                             } for calling_point in service.get("subsequentCallingPoints", [{}])[0].get("callingPoint", [])
                         ]
                     } for service in train_services if service.get("platform") == PLATFORM_NUMBER

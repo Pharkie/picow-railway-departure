@@ -20,10 +20,3 @@ LINE_HEIGHT = 12
 CHAR_WIDTH = 8  # Width of a character in pixels
 
 WIFI_TIMEOUT = 20  # Seconds
-
-# INFO_STRINGS = [
-#     "Be alert. See it. Say it. Sorted.",
-#     "Mind the gap",
-#     "Stand behind the yellow line",
-#     "Please have your ticket ready",
-# ]

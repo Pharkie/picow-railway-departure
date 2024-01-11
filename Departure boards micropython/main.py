@@ -161,12 +161,12 @@ def format_calling_points(departure):
     
     # Format all but the last calling point
     calling_points_text = "Calling at: " + ', '.join(
-        f"{calling_point['locationName']} ({calling_point['time_scheduled']})"
+        f"{calling_point['locationName']} {calling_point['time_due']}"
         for calling_point in calling_points[:-1]
     )
     
     # Add 'and' before the last calling point
-    last_calling_point = f"{calling_points[-1]['locationName']} ({calling_points[-1]['time_scheduled']})"
+    last_calling_point = f"{calling_points[-1]['locationName']} {calling_points[-1]['time_due']}"
 
     if calling_points_text:
         calling_points_text += f" and {last_calling_point}"
@@ -177,6 +177,57 @@ def format_calling_points(departure):
     calling_points_text += f" ({departure['operator']})"
     
     return calling_points_text
+
+def display_centred_text(text, y):
+    text_width = len(text) * CHAR_WIDTH  # 8 pixels per character
+    x = max(0, (DISPLAY_WIDTH - text_width) // 2)  # Calculate x-coordinate to center text
+    oled1.fill_rect(0, y, DISPLAY_WIDTH, 8, 0)  # Clear the line
+    oled1.text(text, x, y)  # Display the text
+    oled1.show()
+
+async def display_first_departure(rail_data_instance, clock_task):
+    clear_line(LINEONE_Y)
+    oled1.text("1 " + rail_data_instance.departures_list[0]["destination"], 0, LINEONE_Y)
+    oled1.fill_rect(85, LINEONE_Y, DISPLAY_WIDTH, LINE_HEIGHT, 0)
+    oled1.text(rail_data_instance.departures_list[0]["time_scheduled"], 88, LINEONE_Y)
+    oled1.show()
+    await asyncio.sleep(3)
+
+    time_estimated = rail_data_instance.departures_list[0]["time_estimated"]
+
+    if time_estimated == "On time":
+        display_centred_text("Due on time", LINETWO_Y)
+    else:
+        display_centred_text(f"Now due: {time_estimated}", LINETWO_Y)
+
+    await asyncio.sleep(3)
+    clear_line(LINETWO_Y)
+    await asyncio.sleep(2)
+
+    clock_task.cancel() # Cancel the clock task so it doesn't interfere with the scrolling text
+    await scroll_text_with_clock(format_calling_points(rail_data_instance.departures_list[0]), LINETWO_Y)
+    clock_task = asyncio.create_task(display_clock())
+    await asyncio.sleep(3)
+
+async def display_no_departures():
+    clear_line(LINEONE_Y)
+    oled1.text("No departures", 0, LINEONE_Y)
+    oled1.show()
+    await asyncio.sleep(12)
+
+async def display_second_departure(rail_data_instance):
+    clear_line(LINETWO_Y)
+    oled1.text("2 " + rail_data_instance.departures_list[1]["destination"], 0, LINETWO_Y)
+    oled1.fill_rect(85, LINETWO_Y, DISPLAY_WIDTH, LINE_HEIGHT, 0)
+    oled1.text(rail_data_instance.departures_list[1]["time_scheduled"], 88, LINETWO_Y)
+    oled1.show()
+    await asyncio.sleep(4)
+
+async def display_travel_alert(rail_data_instance, clock_task):
+    print("Displaying travel alert:", rail_data_instance.nrcc_message, "\n")
+    clock_task.cancel()
+    await display_travel_alert(rail_data_instance.nrcc_message)
+    clock_task = asyncio.create_task(display_clock())
 
 async def main():
     # print("main() called")
@@ -195,45 +246,16 @@ async def main():
     clock_task = asyncio.create_task(display_clock())
 
     while True:
-        # If there's a first departure, show it
         if len(rail_data_instance.departures_list) > 0:
-            clear_line(LINEONE_Y)
-            oled1.text("1 " + rail_data_instance.departures_list[0]["destination"], 0, LINEONE_Y)
-            oled1.fill_rect(85, LINEONE_Y, DISPLAY_WIDTH, LINE_HEIGHT, 0)
-            oled1.text(rail_data_instance.departures_list[0]["time_scheduled"], 88, LINEONE_Y)
-            oled1.show()
-            await asyncio.sleep(3)
-
-            time_estimated = rail_data_instance.departures_list[0]["time_estimated"]
-
-            clock_task.cancel() # Cancel the clock task so it doesn't interfere with the scrolling text
-            if time_estimated != "On time":
-                await scroll_text_with_clock(f"Estimated arrival: {time_estimated}", LINETWO_Y)
-                await asyncio.sleep(3)
-
-            await scroll_text_with_clock(format_calling_points(rail_data_instance.departures_list[0]), LINETWO_Y)
-            clock_task = asyncio.create_task(display_clock())
-            await asyncio.sleep(3)
+            await display_first_departure(rail_data_instance, clock_task)
         else:
-            clear_line(LINEONE_Y)
-            oled1.text("No departures", 0, LINEONE_Y)
-            oled1.show()
-            await asyncio.sleep(12)
+            await display_no_departures()
 
-        # If there's a second departure, show it - after calling points have scrolled on line two
         if len(rail_data_instance.departures_list) > 1:
-            clear_line(LINETWO_Y)
-            oled1.text("2 " + rail_data_instance.departures_list[1]["destination"], 0, LINETWO_Y)
-            oled1.fill_rect(85, LINETWO_Y, DISPLAY_WIDTH, LINE_HEIGHT, 0)
-            oled1.text(rail_data_instance.departures_list[1]["time_scheduled"], 88, LINETWO_Y)
-            oled1.show()
-            await asyncio.sleep(4)
+            await display_second_departure(rail_data_instance)
 
         if rail_data_instance.nrcc_message:
-            print("Displaying travel alert:", rail_data_instance.nrcc_message, "\n")
-            clock_task.cancel()
-            await display_travel_alert(rail_data_instance.nrcc_message)
-            clock_task = asyncio.create_task(display_clock())
+            await display_travel_alert(rail_data_instance, clock_task)
         else:
             await asyncio.sleep(3)
 
