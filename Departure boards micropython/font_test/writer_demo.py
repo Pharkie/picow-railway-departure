@@ -23,19 +23,15 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
-
-
 # https://learn.adafruit.com/monochrome-oled-breakouts/wiring-128x32-spi-oled-display
 # https://www.proto-pic.co.uk/monochrome-128x32-oled-graphic-display.html
 
-# V0.3 13th Aug 2018
+# VXX
 
 from machine import Pin, I2C
 from ssd1306 import SSD1306_I2C
 import framebuf
-
-# Font
-import writer_lib.font6
+import font_test.font6
 
 DISPLAY_WIDTH = 128
 DISPLAY_HEIGHT = 32
@@ -48,29 +44,14 @@ def display_text(oled, font, text, x, y):
         oled.blit(fbc, x, y)
         x += char_width
 
-def test(use_spi=False):
-    # ssd = setup(use_spi)  # Create a display instance
+def test():
     i2c_oled1 = I2C(0, scl=Pin(17), sda=Pin(16), freq=200000)
     oled1 = SSD1306_I2C(DISPLAY_WIDTH, DISPLAY_HEIGHT, i2c_oled1)
 
     oled1.fill(0)
     oled1.show()
-    # rhs = WIDTH -1
-    # ssd.line(rhs - 20, 0, rhs, 20, 1)
-    # square_side = 10
-    # ssd.fill_rect(rhs - square_side, 0, square_side, square_side, 1)
-
-    # writer_instance = Writer(oled1, writer_lib.font6)
     
-    display_text(oled1, writer_lib.font6, "Hi world", 10, 10)
-    # writer_instance.printstring('1 Birmingham New Street')
-    # writer_instance.printstring('World test')
+    display_text(oled1, font_test.font6, "Birmingham New St", 10, 10)
     oled1.show()
-
-# print('Test assumes a 128*64 (w*h) display. Edit WIDTH and HEIGHT in ssd1306_setup.py for others.')
-# print('Device pinouts are comments in ssd1306_setup.py.')
-# print('Issue:')
-# print('writer_demo.test() for an I2C connected device.')
-# print('writer_demo.test(True) for an SPI connected device.')
 
 test()

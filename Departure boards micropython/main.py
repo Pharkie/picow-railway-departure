@@ -17,6 +17,8 @@ import utils
 import rail_data
 import urandom
 from ssd1306 import SSD1306_I2C
+import framebuf
+from lib.fdrawer import FontDrawer
 from config import LINEONE_Y, LINETWO_Y, LINETHREE_Y, DISPLAY_WIDTH, DISPLAY_HEIGHT, LINE_HEIGHT, CHAR_WIDTH, offline_mode
 
 def initialize_oled(i2c, display_name):
@@ -322,7 +324,12 @@ def both_screen_text(oled1, oled2, text1, y1, text2=None, y2=None, text3=None, y
 if __name__ == "__main__":
     oled1, oled2 = setup_displays()
 
-    if not offline_mode:
-        utils.connect_wifi(oled1)
+    # Use a font drawer to draw font to FrameBuffer
+    fd_instance = FontDrawer(frame_buffer=oled1, font_name = 'dejav_m10')
+    fd_instance.print_str( "Font Demo", 2, 2 )
+    oled1.show()
 
-    asyncio.run(main(oled1, oled2))
+    # if not offline_mode:
+    #     utils.connect_wifi(oled1)
+
+    # asyncio.run(main(oled1, oled2))

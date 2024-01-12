@@ -2,9 +2,6 @@
 	"folders": [
 		{
 			"path": "Departure boards micropython"
-		},
-		{
-			"path": "../Pimoroni LED panel"
 		}
 	],
 	"settings": {
