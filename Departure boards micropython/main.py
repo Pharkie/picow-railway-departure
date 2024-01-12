@@ -75,7 +75,7 @@ async def display_clock(oled, fd_oled):
         # Clear where the time is displayed
         oled.fill_rect(offline_centre_x, THIN_LINETHREE_Y, offline_width, THIN_LINE_HEIGHT, 0)
 
-        if counter <= 2:
+        if offline_mode and counter <= 2:
             fd_oled.print_str(offline_string, offline_centre_x, THIN_LINETHREE_Y)
         else:
             fd_oled.print_str(time_string.format(current_time[3], current_time[4], current_time[5]), clock_centre_x, THIN_LINETHREE_Y)
@@ -277,7 +277,7 @@ async def run_oled(oled, fd_oled, departures, nrcc_message, clock_task):
     if len(departures) > 0:
         await display_first_departure(oled, fd_oled, departures)
     else:
-        await display_no_departures(oled)
+        await display_no_departures(oled, fd_oled)
 
     # If there is a second departure for this screen, show it on line two
     if len(departures) > 1:
