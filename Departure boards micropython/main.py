@@ -19,7 +19,8 @@ import urandom
 from ssd1306 import SSD1306_I2C
 import framebuf
 from lib.fdrawer import FontDrawer
-from config import LINEONE_Y, LINETWO_Y, LINETHREE_Y, DISPLAY_WIDTH, DISPLAY_HEIGHT, LINE_HEIGHT, CHAR_WIDTH, offline_mode
+from config import LINEONE_Y, THIN_LINETWO_Y, THIN_LINETHREE_Y, THIN_LINE_HEIGHT, THICK_LINE_HEIGHT, THICK_LINETWO_Y, THICK_LINETHREE_Y, THICK_CHAR_WIDTH
+from config import DISPLAY_WIDTH, DISPLAY_HEIGHT, THIN_CHAR_WIDTH, offline_mode
 
 def initialize_oled(i2c, display_name):
     try:
@@ -32,7 +33,7 @@ def initialize_oled(i2c, display_name):
         oled = SSD1306_I2C(DISPLAY_WIDTH, DISPLAY_HEIGHT, i2c)
         oled.fill(0)
         oled.text("Loading", 0, LINEONE_Y)
-        oled.text("Pico departures", 0, LINETWO_Y)
+        oled.text("Pico departures", 0, THIN_LINETWO_Y)
         oled.show()
 
         return oled
@@ -57,27 +58,27 @@ def clear_display(oled):
     oled.show()
 
 def clear_line(oled, y):
-    oled.fill_rect(0, y, DISPLAY_WIDTH, LINE_HEIGHT, 0)
+    oled.fill_rect(0, y, DISPLAY_WIDTH, THICK_LINE_HEIGHT, 0)
 
-async def display_clock(oled):
+async def display_clock(oled, fd_oled):
     time_string = "{:02d}:{:02d}:{:02d}"
-    text_width = len(time_string.format(0, 0, 0)) * CHAR_WIDTH  # 8 pixels per character
+    text_width = len(time_string.format(0, 0, 0)) * THIN_CHAR_WIDTH  # 8 pixels per character
     clock_centre_x = (DISPLAY_WIDTH - text_width) // 2
 
     offline_string = "[offline]"
-    offline_width = len(offline_string) * CHAR_WIDTH
+    offline_width = len(offline_string) * THIN_CHAR_WIDTH
     offline_centre_x = (DISPLAY_WIDTH - offline_width) // 2
 
     counter = 0
     while True:
         current_time = utime.localtime()
         # Clear where the time is displayed
-        oled.fill_rect(offline_centre_x, LINETHREE_Y, offline_width, 8, 0)
+        oled.fill_rect(offline_centre_x, THIN_LINETHREE_Y, offline_width, THIN_LINE_HEIGHT, 0)
 
         if counter <= 2:
-            oled.text(offline_string, offline_centre_x, LINETHREE_Y)
+            fd_oled.print_str(offline_string, offline_centre_x, THIN_LINETHREE_Y)
         else:
-            oled.text(time_string.format(current_time[3], current_time[4], current_time[5]), clock_centre_x, LINETHREE_Y)
+            fd_oled.print_str(time_string.format(current_time[3], current_time[4], current_time[5]), clock_centre_x, THIN_LINETHREE_Y)
 
         if offline_mode:
             counter += 1
@@ -85,7 +86,7 @@ async def display_clock(oled):
                 counter = 0
 
         oled.show()  
-        await asyncio.sleep(1)  # Update every second
+        await asyncio.sleep(0.9)  # Setting to 0.9 helps clock not skip seconds when device busy
 
 async def display_travel_alert(oled, rail_data_instance):
     print("Displaying travel alert:", rail_data_instance.nrcc_message, "\n")
@@ -93,10 +94,10 @@ async def display_travel_alert(oled, rail_data_instance):
     message_text = rail_data_instance.nrcc_message
 
     MAX_LINES_PER_SCREEN = 3
-    MAX_CHARS_PER_LINE = DISPLAY_WIDTH // CHAR_WIDTH  # Maximum number of characters per line
+    MAX_CHARS_PER_LINE = DISPLAY_WIDTH // THIN_CHAR_WIDTH  # Maximum number of characters per line
     
     alert_text = "Travel Alert"
-    centre_x = (DISPLAY_WIDTH - len(alert_text) * CHAR_WIDTH) // 2  # Center the text
+    centre_x = (DISPLAY_WIDTH - len(alert_text) * THIN_CHAR_WIDTH) // 2  # Center the text
 
     words = message_text.split()
     screens = []
@@ -106,7 +107,7 @@ async def display_travel_alert(oled, rail_data_instance):
     oled.fill(0)
     # Flash the alert text before displaying the message
     for _ in range(2):
-        oled.text(alert_text, centre_x, LINETWO_Y)
+        oled.text(alert_text, centre_x, THIN_LINETWO_Y)
         oled.show()
         time.sleep(0.5)
         oled.fill(0)
@@ -134,7 +135,7 @@ async def display_travel_alert(oled, rail_data_instance):
         oled.fill(0)  # Clear the display
 
         for i, line in enumerate(screen):
-            oled.text(line, 0, i * LINE_HEIGHT)
+            oled.text(line, 0, i * THIN_LINE_HEIGHT)
 
         oled.show()  # Update the display
 
@@ -145,7 +146,7 @@ This function combines the clock to save resources and task switching to help th
 """
 async def scroll_text(oled, text, y):
     # print(f"scroll_text() called with text: {text}")
-    text_width = len(text) * CHAR_WIDTH
+    text_width = len(text) * THICK_CHAR_WIDTH
     frame_delay = 0.1
     step_size = 6
 
@@ -188,7 +189,7 @@ def format_calling_points(departure):
     return calling_points_text
 
 def display_centred_text(oled, text, y):
-    text_width = len(text) * CHAR_WIDTH  # 8 pixels per character
+    text_width = len(text) * THICK_CHAR_WIDTH  # 8 pixels per character
     x = max(0, (DISPLAY_WIDTH - text_width) // 2)  # Calculate x-coordinate to center text
     oled.fill_rect(0, y, DISPLAY_WIDTH, 8, 0)  # Clear the line
     oled.text(text, x, y)  # Display the text
@@ -209,8 +210,8 @@ def wrap_text(text, max_length):
     lines.append(current_line.strip())
     return lines
 
-async def display_first_departure_line_one(oled, destination, time_scheduled):
-    max_length = 9
+async def display_first_departure_line_one(oled, fd_oled, destination, time_scheduled):
+    max_length = 12
 
     # Split the destination into lines of up to max_length characters each, breaking at word boundaries
     lines = wrap_text(destination, max_length)
@@ -218,67 +219,74 @@ async def display_first_departure_line_one(oled, destination, time_scheduled):
     while True:
         for line in lines:
             clear_line(oled, LINEONE_Y)
-            oled.text("1 " + line, 0, LINEONE_Y)
-            oled.fill_rect(85, LINEONE_Y, DISPLAY_WIDTH, LINE_HEIGHT, 0) # Make room for time
-            oled.text(time_scheduled, 88, LINEONE_Y)
+
+            fd_oled.print_str("1 " + line, 0, LINEONE_Y)
+
+            # oled.text("1 " + line, 0, LINEONE_Y)
+            oled.fill_rect(97, LINEONE_Y, DISPLAY_WIDTH, THIN_LINE_HEIGHT, 0) # Make room for time
+            fd_oled.print_str(time_scheduled, 99, LINEONE_Y)
+            # oled.text(time_scheduled, 88, LINEONE_Y)
             oled.show()
             await asyncio.sleep(3)
     
-async def display_first_departure(oled, departures):
+async def display_first_departure(oled, fd_oled, departures):
     # print(f"Displaying first departure for: {oled} = {departures}")
 
-    line_one_task = asyncio.create_task(display_first_departure_line_one(oled, departures[0]["destination"], departures[0]["time_scheduled"]))
+    line_one_task = asyncio.create_task(display_first_departure_line_one(oled, fd_oled, departures[0]["destination"], departures[0]["time_scheduled"]))
     await asyncio.sleep(3)
 
     time_estimated = departures[0]["time_estimated"]
 
     # Second line: show "on time" or estimated time
     if time_estimated == "On time":
-        display_centred_text(oled, "Due on time", LINETWO_Y)
+        display_centred_text(oled, "Due on time", THICK_LINETWO_Y)
     else:
-        display_centred_text(oled, f"Now due: {time_estimated}", LINETWO_Y)
+        display_centred_text(oled, f"Now due: {time_estimated}", THICK_LINETWO_Y)
 
     await asyncio.sleep(3)
-    clear_line(oled, LINETWO_Y)
+    clear_line(oled, THIN_LINETWO_Y)
     await asyncio.sleep(2)
 
     # Second line: scroll the calling points
-    await scroll_text(oled, format_calling_points(departures[0]), LINETWO_Y)
+    await scroll_text(oled, format_calling_points(departures[0]), THIN_LINETWO_Y)
     await asyncio.sleep(3)
     
     if line_one_task:
         line_one_task.cancel()
 
-async def display_second_departure(oled, departures):
-    clear_line(oled, LINETWO_Y)
-    oled.text("2 " + departures[1]["destination"], 0, LINETWO_Y)
-    oled.fill_rect(85, LINETWO_Y, DISPLAY_WIDTH, LINE_HEIGHT, 0)
-    oled.text(departures[1]["time_scheduled"], 88, LINETWO_Y)
+async def display_second_departure(oled, fd_oled, departures):
+    clear_line(oled, THIN_LINETWO_Y)
+    # oled.text("2 " + departures[1]["destination"], 0, LINETWO_Y)
+    fd_oled.print_str("2 " + departures[1]["destination"], 0, THIN_LINETWO_Y)
+    oled.fill_rect(97, THIN_LINETWO_Y, DISPLAY_WIDTH, THIN_LINE_HEIGHT, 0)
+    # oled.text(departures[1]["time_scheduled"], 88, LINETWO_Y)
+    fd_oled.print_str(departures[1]["time_scheduled"], 99, THIN_LINETWO_Y)
     oled.show()
     await asyncio.sleep(4)
 
-async def display_no_departures(oled):
+async def display_no_departures(oled, fd_oled):
     clear_line(oled, LINEONE_Y)
-    clear_line(oled, LINETWO_Y)
-    oled.text("No departures", 0, LINEONE_Y)
+    clear_line(oled, THIN_LINETWO_Y)
+    fd_oled.print_str("No departures", 0, LINEONE_Y)
+    # oled.text("No departures", 0, LINEONE_Y)
     oled.show()
     await asyncio.sleep(12)
 
-async def run_oled(oled, departures, nrcc_message, clock_task):
+async def run_oled(oled, fd_oled, departures, nrcc_message, clock_task):
     # Show first departure for each screen on line one, and scroll the calling points on line two
     if len(departures) > 0:
-        await display_first_departure(oled, departures)
+        await display_first_departure(oled, fd_oled, departures)
     else:
         await display_no_departures(oled)
 
     # If there is a second departure for this screen, show it on line two
     if len(departures) > 1:
-        await display_second_departure(oled, departures)
+        await display_second_departure(oled, fd_oled, departures)
 
     if nrcc_message:
         clock_task.cancel()
-        await display_travel_alert(oled, nrcc_message)
-        clock_task = asyncio.create_task(display_clock(oled))
+        await display_travel_alert(oled, fd_oled, nrcc_message)
+        clock_task = asyncio.create_task(display_clock(fd_oled))
     else:
         await asyncio.sleep(3)
 
@@ -298,16 +306,19 @@ async def main(oled1, oled2):
     clear_display(oled1)
     clear_display(oled2)
 
-    oled1_clock_task = asyncio.create_task(display_clock(oled1))
-    oled2_clock_task = asyncio.create_task(display_clock(oled2))
+    fd_oled1 = FontDrawer(frame_buffer=oled1, font_name = 'dejav_m10')
+    fd_oled2 = FontDrawer(frame_buffer=oled2, font_name = 'dejav_m10')
+
+    oled1_clock_task = asyncio.create_task(display_clock(oled1, fd_oled1))
+    oled2_clock_task = asyncio.create_task(display_clock(oled2, fd_oled2))
 
     oled1_task, oled2_task = None, None
     
     while True:
         if not oled1_task or oled1_task.done():
-            oled1_task = asyncio.create_task(run_oled(oled1, rail_data_instance.oled1_departures, rail_data_instance.nrcc_message, oled1_clock_task))
+            oled1_task = asyncio.create_task(run_oled(oled1, fd_oled1, rail_data_instance.oled1_departures, rail_data_instance.nrcc_message, oled1_clock_task))
         if oled2 and (not oled2_task or oled2_task.done()):
-            oled2_task = asyncio.create_task(run_oled(oled2, rail_data_instance.oled2_departures, rail_data_instance.nrcc_message, oled2_clock_task))
+            oled2_task = asyncio.create_task(run_oled(oled2, fd_oled2, rail_data_instance.oled2_departures, rail_data_instance.nrcc_message, oled2_clock_task))
         await asyncio.sleep(1) # Without this, nothing has time to run
 
 def both_screen_text(oled1, oled2, text1, y1, text2=None, y2=None, text3=None, y3=None):
@@ -324,12 +335,7 @@ def both_screen_text(oled1, oled2, text1, y1, text2=None, y2=None, text3=None, y
 if __name__ == "__main__":
     oled1, oled2 = setup_displays()
 
-    # Use a font drawer to draw font to FrameBuffer
-    fd_instance = FontDrawer(frame_buffer=oled1, font_name = 'dejav_m10')
-    fd_instance.print_str( "Font Demo", 2, 2 )
-    oled1.show()
+    if not offline_mode:
+        utils.connect_wifi(oled1)
 
-    # if not offline_mode:
-    #     utils.connect_wifi(oled1)
-
-    # asyncio.run(main(oled1, oled2))
+    asyncio.run(main(oled1, oled2))
