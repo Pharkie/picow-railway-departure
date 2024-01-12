@@ -141,16 +141,13 @@ async def display_travel_alert(oled, rail_data_instance):
 
         time.sleep(3)  # Wait 3 seconds without yielding to the event loop
 
-"""
-This function combines the clock to save resources and task switching to help the scroll be smooth.
-"""
 async def scroll_text(oled, text, y):
     # print(f"scroll_text() called with text: {text}")
     text_width = len(text) * THICK_CHAR_WIDTH
-    frame_delay = 0.1
-    step_size = 6
+    frame_delay = 0.1 # Going under this causes problems
+    step_size = 6 # Smoother scrolling takes too much CPU
 
-    for x in range(DISPLAY_WIDTH, -(text_width+step_size), -step_size): # -8 because each character is 8 pixels wide. Smoother scrolling takes too much CPU.
+    for x in range(DISPLAY_WIDTH, -(text_width+step_size), -step_size): 
         clear_line(oled, y)
         oled.text(text, x, y)
         oled.show()
@@ -236,6 +233,8 @@ async def display_first_departure(oled, fd_oled, departures):
     await asyncio.sleep(3)
 
     time_estimated = departures[0]["time_estimated"]
+
+    clear_line(oled, THICK_LINETWO_Y)
 
     # Second line: show "on time" or estimated time
     if time_estimated == "On time":
