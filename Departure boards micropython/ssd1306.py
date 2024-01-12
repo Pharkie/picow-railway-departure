@@ -120,7 +120,7 @@ class SSD1306_I2C(SSD1306):
         self.write_list[1] = buf
         self.i2c.writevto(self.addr, self.write_list)
 
-# only required for SPI version (not covered in this project)
+# only required for SPI version
 class SSD1306_SPI(SSD1306):
     def __init__(self, width, height, spi, dc, res, cs, external_vcc=False):
         self.rate = 10 * 1024 * 1024

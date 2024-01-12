@@ -11,6 +11,7 @@ class RailData:
         # self.nrcc_message = "Some long sample text would go here if there was a possibility that there were problems on the rail network somewhere I think?"
         self.nrcc_message = ""
         self.oled1_departures = []
+        self.oled2_departures = []
 
     async def get_rail_data(self):
         """
