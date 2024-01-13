@@ -15,9 +15,9 @@ from config import WIFI_TIMEOUT, LINEONE_Y, THIN_LINETWO_Y, THIN_LINETHREE_Y, of
 def connect_wifi(oled_display=None):
     # print("connect_wifi() called")
     global offline_mode
-    
+
     wlan = network.WLAN(network.STA_IF)
-    
+
     # Deactivate and then reactivate the WiFi interface for a complete reset
     wlan.active(False)
     utime.sleep(1)  # Wait a bit for the interface to deactivate
@@ -27,8 +27,8 @@ def connect_wifi(oled_display=None):
     # Reset connection
     if is_wifi_connected():
         disconnect_wifi()
-    
-    # wlan.config(pm=0xa11140)
+
+    wlan.config(pm=0xa11140)
     wlan.connect(WIFI_SSID, WIFI_PASSWORD)
 
     max_wait = waited = WIFI_TIMEOUT
@@ -37,7 +37,7 @@ def connect_wifi(oled_display=None):
             break
         print(f"Waiting for Wifi to connect {max_wait + 1 - waited}/{max_wait}")
         oled_display.fill(0)
-        oled_display.text(f"Connecting wifi", 0, LINEONE_Y)
+        oled_display.text("Connecting wifi", 0, LINEONE_Y)
         oled_display.text(f"{max_wait + 1 - waited}/{max_wait}", 50, THIN_LINETWO_Y)
         oled_display.show()
         waited -= 1
@@ -55,7 +55,8 @@ def connect_wifi(oled_display=None):
         oled_display.text("Switching to", 0, THIN_LINETWO_Y)
         oled_display.text("offline mode", 0, THIN_LINETHREE_Y)
     oled_display.show()
-    
+    utime.sleep(1)
+
 def is_wifi_connected():
     is_it = network.WLAN(network.STA_IF).isconnected()
     # print(f"is_wifi_connected() called and returns {is_it}")

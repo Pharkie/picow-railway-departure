@@ -12,8 +12,18 @@ from machine import Pin, I2C
 import utime
 import uasyncio as asyncio
 import time
-from config import LINEONE_Y, THIN_LINETWO_Y, THIN_LINETHREE_Y, THIN_LINE_HEIGHT, THICK_LINE_HEIGHT, THICK_LINETWO_Y, THICK_LINETHREE_Y, THICK_CHAR_WIDTH
-from config import DISPLAY_WIDTH, DISPLAY_HEIGHT, THIN_CHAR_WIDTH, offline_mode
+from config import (
+    LINEONE_Y,
+    THIN_LINETWO_Y,
+    DISPLAY_WIDTH,
+    THIN_LINETHREE_Y, 
+    THIN_LINE_HEIGHT, 
+    THICK_LINE_HEIGHT, 
+    THICK_LINETWO_Y,
+    THIN_CHAR_WIDTH,
+    THICK_CHAR_WIDTH,
+    offline_mode
+)
 
 async def display_first_departure_line_one(oled, fd_oled, destination, time_scheduled):
     max_length = 12
@@ -62,6 +72,14 @@ async def display_first_departure(oled, fd_oled, departures):
         line_one_task.cancel()
 
 async def display_second_departure(oled, fd_oled, departures):
+    """
+    This coroutine displays the second departure on the OLED screen.
+
+    Parameters:
+    oled: The OLED display object.
+    fd_oled: The FontDrawer object for the OLED display.
+    departures: A list of departures to display.
+    """
     clear_line(oled, THIN_LINETWO_Y)
     # oled.text("2 " + departures[1]["destination"], 0, LINETWO_Y)
     fd_oled.print_str("2 " + departures[1]["destination"], 0, THIN_LINETWO_Y)
@@ -72,6 +90,13 @@ async def display_second_departure(oled, fd_oled, departures):
     await asyncio.sleep(4)
 
 async def display_no_departures(oled, fd_oled):
+    """
+    This coroutine displays a "No departures" message on the OLED screen.
+
+    Parameters:
+    oled: The OLED display object.
+    fd_oled: The FontDrawer object for the OLED display.
+    """
     clear_line(oled, LINEONE_Y)
     clear_line(oled, THIN_LINETWO_Y)
     fd_oled.print_str("No departures", 0, LINEONE_Y)
@@ -116,6 +141,14 @@ def format_calling_points(departure):
     return calling_points_text
 
 def display_centred_text(oled, text, y):
+    """
+    This function displays a given text centered on the OLED display at a given y-coordinate.
+
+    Parameters:
+    oled: The OLED display object.
+    text: The text string to display.
+    y: The y-coordinate at which to display the text.
+    """
     text_width = len(text) * THICK_CHAR_WIDTH  # 8 pixels per character
     x = max(0, (DISPLAY_WIDTH - text_width) // 2)  # Calculate x-coordinate to center text
     oled.fill_rect(0, y, DISPLAY_WIDTH, 8, 0)  # Clear the line
@@ -123,6 +156,16 @@ def display_centred_text(oled, text, y):
     oled.show()
 
 def wrap_text(text, max_length):
+    """
+    This function wraps a given text to a specified maximum length.
+
+    Parameters:
+    text: The text string to wrap.
+    max_length: The maximum length of a line of text.
+
+    Returns:
+    lines: A list of lines of text, each line being no longer than max_length.
+    """
     words = text.split(' ')
     lines = []
     current_line = ''
@@ -138,13 +181,33 @@ def wrap_text(text, max_length):
     return lines
 
 def clear_display(oled):
+    """
+    This function clears the OLED display.
+
+    Parameters:
+    oled: The OLED display object.
+    """
     oled.fill(0)
     oled.show()
 
 def clear_line(oled, y):
+    """
+    This function clears a specific line on the OLED display.
+
+    Parameters:
+    oled: The OLED display object.
+    y: The y-coordinate of the line to clear.
+    """
     oled.fill_rect(0, y, DISPLAY_WIDTH, THICK_LINE_HEIGHT, 0)
 
 async def display_clock(oled, fd_oled):
+    """
+    This coroutine displays the current time on an OLED screen.
+
+    Parameters:
+    oled: The OLED display object.
+    fd_oled: The FontDrawer object for the OLED display.
+    """
     time_string = "{:02d}:{:02d}:{:02d}"
     text_width = len(time_string.format(0, 0, 0)) * THIN_CHAR_WIDTH  # 8 pixels per character
     clock_centre_x = (DISPLAY_WIDTH - text_width) // 2
@@ -173,6 +236,14 @@ async def display_clock(oled, fd_oled):
         await asyncio.sleep(0.9)  # Setting to 0.9 helps clock not skip seconds when device busy
 
 async def display_travel_alert(oled, fd_oled, nrcc_message):
+    """
+    This coroutine displays a travel alert message on the OLED screen.
+
+    Parameters:
+    oled: The OLED display object.
+    fd_oled: The FontDrawer object for the OLED display.
+    nrcc_message: A travel alert message to display.
+    """
     MAX_LINES_PER_SCREEN = 3
     MAX_CHARS_PER_LINE = DISPLAY_WIDTH // THIN_CHAR_WIDTH  # Maximum number of characters per line
     
