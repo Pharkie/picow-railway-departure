@@ -2,9 +2,10 @@ import re
 import urequests
 import uasyncio as asyncio
 import utils
-import json
-from credentials import LDBWS_API_KEY
-from config import STATION_CRS, LDBWS_API_URL, OLED1_PLATFORM_NUMBER, OLED2_PLATFORM_NUMBER, offline_mode
+import ujson
+import credentials
+import config
+import gc
 
 class RailData:
     def __init__(self):
@@ -12,46 +13,68 @@ class RailData:
         self.nrcc_message = ""
         self.oled1_departures = []
         self.oled2_departures = []
+  
+    def fetch_data_from_api(self):
+        assert utils.is_wifi_connected(), "Wifi not connected"
+        api_url = f"{config.LDBWS_API_URL}/{config.STATION_CRS}"
+        request_headers = {"x-apikey": credentials.LDBWS_API_KEY}
+
+        response = urequests.get(url=api_url, headers=request_headers, timeout=10)
+
+        # Check the status code of the response
+        if response.status_code < 200 or response.status_code >= 300:
+            response.close()
+            raise Exception(f"HTTP request failed with status code {response.status_code}")
+
+        try:
+            json_data = ujson.loads(response.text)
+        except ValueError:
+            print("Error parsing JSON response")
+            json_data = None
+
+        response.close()
+        gc.collect()
+        return json_data
+
+    def fetch_data_from_file(self):
+        try:
+            with open("sample_data.json", "r") as sample_data_file:
+                return ujson.loads(sample_data_file.read())
+        except OSError as e:
+            print(f"Error opening or reading file: {e}")
+            return None
+        except ValueError as e:
+            print(f"Error parsing JSON data: {e}")
+            return None
 
     async def get_rail_data(self):
         """
         Get data from the National Rail API.
         """
-        global offline_mode
         response_JSON = None
 
-        # Get data
-        if not offline_mode:
-            try:
-                assert utils.is_wifi_connected(), "Wifi not connected"
-                
-                api_url = f"{LDBWS_API_URL}/{STATION_CRS}"
-                request_headers = {"x-apikey": LDBWS_API_KEY}
-                response = urequests.get(url=api_url, headers=request_headers, timeout=10)
-                response_JSON = response.json()
+        try:
+            if not config.offline_mode:
+                response_JSON = self.fetch_data_from_api()
+            elif config.offline_mode and not self.oled1_departures and not self.oled2_departures:
+                response_JSON = self.fetch_data_from_file()
+        except Exception as e:
+            print(f"Error fetching rail data: {e}. Switching to offline mode and cancelling updates.")
+            response_JSON = self.fetch_data_from_file()
+            config.offline_mode = True
 
-                # Essential or we get ENOMEM errors. Don't switch for one line responseJSON = urequests.get().json()
-                response.close()
-                del response # Free up memory
+        if response_JSON:
+            self.parse_rail_data(response_JSON)
 
-                # print(f"get_rail_data() got response: {response_JSON}")
-            except Exception as e:
-                print(f"Error fetching rail data: {e}. Switching to offline mode.")
-                offline_mode = True
-        elif offline_mode:
-            try:
-                with open("sample_data.json", "r") as sample_data_file:
-                    response_JSON = json.load(sample_data_file)
-            except FileNotFoundError:
-                print("Error: could not find file 'sample_data.json'.")
-            except IOError as e:
-                print(f"Error: problem reading 'sample_data.json': {e}")
+        offline_status = 'offline' if config.offline_mode else 'online'
+        get_departure = lambda d: f"{d['destination']} ({d.get('time_scheduled', 'N/A')})"
+        oled1_summary = 'No departures' if not self.oled1_departures else ' and '.join(get_departure(d) for d in self.oled1_departures[:2])
+        oled2_summary = 'No departures' if not self.oled2_departures else ' and '.join(get_departure(d) for d in self.oled2_departures[:2])
 
-        # Parse data and load into class variables
-        self.parse_rail_data(response_JSON)
-
-        # print(f"get_rail_data() got departures_list: {self.departures_list}")
-        print(f"get_rail_data() got {len(self.oled1_departures)} services for oled1_departures and {len(self.oled2_departures)} services for oled2_departures")
+        print(
+            f"[{offline_status}] get_rail_data() got oled1_departures (Platform {config.OLED1_PLATFORM_NUMBER}): " +
+            f"{oled1_summary} and oled2_departures (Platform {config.OLED2_PLATFORM_NUMBER}): {oled2_summary}"
+        )
 
     def parse_service(self, service):
         return {
@@ -89,12 +112,19 @@ class RailData:
                 train_services = data_JSON.get("trainServices")
                 if train_services:
                     # print(f"All services: {train_services}")  # Debug print
-                    self.oled1_departures = self.parse_departures(train_services, OLED1_PLATFORM_NUMBER)
-                    self.oled2_departures = self.parse_departures(train_services, OLED2_PLATFORM_NUMBER)
+                    self.oled1_departures = self.parse_departures(train_services, config.OLED1_PLATFORM_NUMBER)
+                    self.oled2_departures = self.parse_departures(train_services, config.OLED2_PLATFORM_NUMBER)
+                    # For testing purposes
+                    # self.oled1_departures[1] = self.oled1_departures[0] # Hack to make the second departure the same as the first
+                    # self.oled1_departures[0]['subsequentCallingPoints'] = [{'locationName': "testy test", 'time_due': "21:30"}]
+                    # self.oled1_departures[1]['subsequentCallingPoints'] = [{'locationName': "testy test", 'time_due': "21:30"}]
                     # print(f"OLED1 departures: {self.oled1_departures}")  # Debug print
                     # print(f"OLED2 departures: {self.oled2_departures}")  # Debug print
 
-                self.nrcc_message = self.parse_nrcc_message(data_JSON.get("nrccMessages"))
+                if config.CUSTOM_TRAVEL_ALERT:
+                    self.nrcc_message = config.CUSTOM_TRAVEL_ALERT
+                else:
+                    self.nrcc_message = self.parse_nrcc_message(data_JSON.get("nrccMessages"))
         except Exception as e:
             print(f"An error occurred while parsing rail data: {e}")
     

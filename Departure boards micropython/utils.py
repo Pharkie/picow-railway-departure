@@ -9,10 +9,11 @@ License: GNU General Public License (GPL)
 """
 import network # type: ignore
 import utime # type: ignore
-from credentials import WIFI_SSID, WIFI_PASSWORD
-from config import WIFI_TIMEOUT, LINEONE_Y, THIN_LINETWO_Y, THIN_LINETHREE_Y, offline_mode, THIN_LINE_HEIGHT, THIN_CHAR_WIDTH
+import credentials
+import config
+import display_utils
 
-def connect_wifi(oled_display=None):
+def connect_wifi(oled1=None, oled2=None, fd_oled1=None, fd_oled2=None):
     # print("connect_wifi() called")
     global offline_mode
 
@@ -28,34 +29,34 @@ def connect_wifi(oled_display=None):
     if is_wifi_connected():
         disconnect_wifi()
 
-    wlan.config(pm=0xa11140)
-    wlan.connect(WIFI_SSID, WIFI_PASSWORD)
+    wlan.config(pm=wlan.PM_NONE)
+    wlan.config(txpower=18)
+    # wlan.config(pm=0xa11140)
+    wlan.connect(credentials.WIFI_SSID, credentials.WIFI_PASSWORD)
 
-    max_wait = waited = WIFI_TIMEOUT
+    max_wait = waited = config.WIFI_TIMEOUT
     while waited > 0:
         if wlan.status() < 0 or wlan.status() >= 3:
             break
         print(f"Waiting for Wifi to connect {max_wait + 1 - waited}/{max_wait}")
-        oled_display.fill(0)
-        oled_display.text("Connecting wifi", 0, LINEONE_Y)
-        oled_display.text(f"{max_wait + 1 - waited}/{max_wait}", 50, THIN_LINETWO_Y)
-        oled_display.show()
+        display_utils.both_screen_text(oled1, oled2, fd_oled1, fd_oled2, "Connecting wifi", config.LINEONE_Y, f"{max_wait + 1 - waited}/{max_wait}", config.THIN_LINETWO_Y)
         waited -= 1
         utime.sleep(1)
 
-    oled_display.fill(0)
     if network.WLAN(network.STA_IF).isconnected():
         print("Wifi connected")
-        oled_display.text("Wifi connected", 0, LINEONE_Y)
-        oled_display.text(":)", 56, THIN_LINETWO_Y)
+        display_utils.both_screen_text(oled1, oled2, fd_oled1, fd_oled2, "Wifi connected", config.LINEONE_Y, ":)", config.THIN_LINETWO_Y)
     else:
         print("Wifi not connected: timed out")
         offline_mode = True
-        oled_display.text("No wifi :(", 24, LINEONE_Y)
-        oled_display.text("Switching to", 0, THIN_LINETWO_Y)
-        oled_display.text("offline mode", 0, THIN_LINETHREE_Y)
-    oled_display.show()
+        display_utils.both_screen_text(oled1, oled2, fd_oled1, fd_oled2, "No wifi :(", config.LINEONE_Y, "Switching to", config.THIN_LINETWO_Y, "offline mode", config.THIN_LINETHREE_Y)
+
     utime.sleep(1)
+    # Clear screens after (but don't update display)
+    if oled1:
+        oled1.fill(0)
+    if oled2:
+        oled2.fill(0)
 
 def is_wifi_connected():
     is_it = network.WLAN(network.STA_IF).isconnected()
