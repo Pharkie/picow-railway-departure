@@ -155,11 +155,10 @@ async def main():
         # Set clock and rail data updates to run in the background
         if not config.offline_mode:
             # TODO: Make just do the DST check not the clock sync
-            if 'sync_rtc_task' not in locals() or sync_rtc_task.done():
+            if sync_rtc_task is None or sync_rtc_task.done():
                 sync_rtc_task = asyncio.create_task(run_periodically(datetime_utils.sync_rtc, urandom.randint(60, 6000)))
-            # Update once a minute
             try:
-                if 'update_rail_data_task' not in locals() or update_rail_data_task.done():
+                if update_rail_data_task is None or update_rail_data_task.done():
                     update_rail_data_task = asyncio.create_task(run_periodically(rail_data_instance.get_rail_data, 60))
             except MemoryError:
                 print("MemoryError occurred while updating rail data. Skipping this update.")
