@@ -3,7 +3,8 @@ from micropython import const
 from machine import Pin
 STATION_CRS = "PMW"  # Station's CRS code
 
-offline_mode = True  # Set to True to use sample_data.json instead of the live API. Not a constant since could be changed at runtime.
+# offline_mode = True  # Set to True to use sample_data.json instead of the live API.
+offline_mode = False  # Comment out one or the other
 
 OLED1_PLATFORM_NUMBER = "1"  # Platform number to show departures for. Note: string not an integer.
 OLED2_PLATFORM_NUMBER = "2"  # Platform number to show departures for. Note: string not an integer.

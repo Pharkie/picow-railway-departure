@@ -134,39 +134,34 @@ async def main():
 
     display_utils.display_init_message(oled1, oled2, fd_oled1, fd_oled2)
     utime.sleep(2)
-    display_utils.clear_display(oled1)
-    display_utils.clear_display(oled2)
 
     if not config.offline_mode:
         utils.connect_wifi(oled1, oled2, fd_oled1, fd_oled2)
 
     rail_data_instance = rail_data.RailData()
 
-    # At startup, run both functions once and wait
-    await datetime_utils.sync_rtc()
-    await rail_data_instance.get_rail_data()
-
     asyncio.create_task(display_utils.display_clock(oled1, fd_oled1))
     asyncio.create_task(display_utils.display_clock(oled2, fd_oled2))
 
     oled1_task, oled2_task, sync_rtc_task, update_rail_data_task = None, None, None, None
 
+    # At startup, run both functions once and wait
+    await datetime_utils.sync_rtc()
+    await rail_data_instance.get_rail_data()
+
+    display_utils.clear_display(oled1)
+    display_utils.clear_display(oled2)
+
     while True: # Main loop runs once per second
         # Set clock and rail data updates to run in the background
         if not config.offline_mode:
-            # TODO: Make just do the DST check not the clock sync
-            if 'sync_rtc_task' not in locals() or sync_rtc_task.done():
+            # TODO: Just do the DST check not the clock sync
+            if sync_rtc_task is None or sync_rtc_task.done():
                 sync_rtc_task = asyncio.create_task(run_periodically(datetime_utils.sync_rtc, urandom.randint(60, 6000)))
-                print("sync_rtc_task created")
-            # Update once a minute
-            try:
-                if 'update_rail_data_task' not in locals() or update_rail_data_task.done():
-                    update_rail_data_task = asyncio.create_task(run_periodically(rail_data_instance.get_rail_data, 60))
-                    print("update_rail_data_task created")
-            except MemoryError:
-                print("MemoryError occurred while updating rail data. Skipping this update.")
-                # Wait for a certain period before creating a new task
-                await asyncio.sleep(60)
+
+            if update_rail_data_task is None or update_rail_data_task.done():
+                update_rail_data_task = asyncio.create_task(run_periodically(rail_data_instance.get_rail_data, 60))
+
         else: # Cancel the tasks if we switched to offline mode
             if sync_rtc_task and not sync_rtc_task.done():
                 sync_rtc_task.cancel()
