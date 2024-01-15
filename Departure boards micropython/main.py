@@ -159,18 +159,19 @@ async def main():
                 sync_rtc_task = asyncio.create_task(run_periodically(datetime_utils.sync_rtc, urandom.randint(60, 6000)))
             try:
                 if update_rail_data_task is None or update_rail_data_task.done():
-                    update_rail_data_task = asyncio.create_task(run_periodically(rail_data_instance.get_rail_data, 60))
+                    update_rail_data_task = asyncio.create_task(run_periodically(rail_data_instance.get_rail_data, 10))
             except MemoryError:
-                print("MemoryError occurred while updating rail data. Skipping this update.")
-                # Wait for a certain period before creating a new task
-                await asyncio.sleep(60)
-        else: # Cancel the tasks if we switched to offline mode
+                print("MemoryError occurred while updating rail data")
+
+        # Cancel the tasks if we switched to offline mode
+        # Not using Else because could have changed above.
+        if config.offline_mode: 
             if sync_rtc_task and not sync_rtc_task.done():
                 sync_rtc_task.cancel()
             if update_rail_data_task and not update_rail_data_task.done():
                 update_rail_data_task.cancel()
 
-        if not oled1_task or oled1_task.done():
+        if oled1_task is None or oled1_task.done():
             oled1_task = asyncio.create_task(
                 run_one_sequence_one_oled(
                     oled1,
@@ -180,7 +181,7 @@ async def main():
                 )
             )
 
-        if oled2 and (not oled2_task or oled2_task.done()):
+        if oled2 and (oled2_task is None or oled2_task.done()):
             oled2_task = asyncio.create_task(
                 run_one_sequence_one_oled(
                     oled2,

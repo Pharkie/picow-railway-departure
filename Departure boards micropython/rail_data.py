@@ -1,6 +1,6 @@
 import re
 import urequests
-import uasyncio as asyncio
+import uasyncio
 import ujson
 import micropython
 import gc
