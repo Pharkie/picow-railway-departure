@@ -24,14 +24,14 @@ class RailData:
         response = None
         for i in range(max_retries):
             try:
-                print(f"Fetching api data. System uptime: {utime.ticks_ms() // 3600000:02}:{(utime.ticks_ms() // 60000) % 60:02}:{(utime.ticks_ms() // 1000) % 60:02}") # Debug print
-                print("Loading API data. GC BEFORE attempt:")
+                print(f"Attempting to fetch data from API {i+1} of {max_retries}")
                 gc.collect() # Seems to help make space for the response in memory
-                micropython.mem_info()
 
-                response = await uaiohttpclient.request("GET", api_url)
-                
-                json_data = await response.json()
+                response = await uaiohttpclient.request("GET", api_url, headers=request_headers)
+                response_content = await response.read()
+                print(f"Response status: {response.status}")
+                print(f"Response content: {response_content}")
+                json_data = ujson.loads(response_content)
 
                 # Parse the JSON data
                 if json_data:
@@ -52,13 +52,14 @@ class RailData:
                 else:
                     print("Error sending request")
             except ValueError:
-                print("Error parsing JSON response")
+                print("Error parsing JSON response. Response content:")
+                print(response_content)
             finally:
                 if response:
                     response.close()
-                print("Loading API data. GC AFTER attempt:")
-                gc.collect()
-                micropython.mem_info()
+
+        # If we reach this point, all retries have failed
+        raise OSError("Failed to fetch data from API after {} attempts".format(max_retries))
 
     def fetch_data_from_file(self):
         try:
@@ -91,6 +92,10 @@ class RailData:
             response_JSON = self.fetch_data_from_file()
             self.parse_rail_data(response_JSON)
             config.offline_mode = True
+
+        print("Loading data. GC AFTER attempt:")
+        gc.collect()
+        micropython.mem_info()
 
         offline_status = 'OFFLINE' if config.offline_mode else 'ONLINE'
         get_departure = lambda d: f"{d['destination']} ({d.get('time_scheduled', 'N/A')})"
