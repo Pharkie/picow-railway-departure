@@ -70,9 +70,9 @@ async def display_first_departure(oled, fd_oled, first_departure):
     clear_line(oled, config.THIN_LINETWO_Y)
     await asyncio.sleep(2)
 
-    # Second line: scroll the calling points
-    await scroll_text(oled, format_calling_points(first_departure), config.THIN_LINETWO_Y)
-    await asyncio.sleep(3)
+    # # Second line: scroll the calling points
+    # await scroll_text(oled, format_calling_points(first_departure), config.THIN_LINETWO_Y)
+    # await asyncio.sleep(3)
     
     if display_departure_task:
         display_departure_task.cancel()
@@ -149,12 +149,12 @@ def format_calling_points(departure):
     
     # Format all but the last calling point
     calling_points_text = "Calling at: " + ', '.join(
-        f"{calling_point['locationName']} {calling_point['time_due']}"
+        f"{calling_point[0]} {calling_point[1]}"
         for calling_point in calling_points[:-1]
     )
     
     # Add 'and' before the last calling point
-    last_calling_point = f"{calling_points[-1]['locationName']} {calling_points[-1]['time_due']}"
+    last_calling_point = f"{calling_points[-1][0]} {calling_points[-1][1]}"
 
     if calling_points_text and len(calling_points) > 1:
         calling_points_text += f" and {last_calling_point}"

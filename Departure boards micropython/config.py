@@ -6,10 +6,12 @@ STATION_CRS = "PMW"  # Station's CRS code
 # offline_mode = True  # Set to True to use sample_data.json instead of the live API.
 offline_mode = False  # Comment out one or the other
 
+OFFLINE_JSON_FILE = "sample_data.json"  # File to use for offline mode
+
 OLED1_PLATFORM_NUMBER = "1"  # Platform number to show departures for. Note: string not an integer.
 OLED2_PLATFORM_NUMBER = "2"  # Platform number to show departures for. Note: string not an integer.
 
-CUSTOM_TRAVEL_ALERT = "This is a 100 character long test travel alert for testing purposes. Please ignore. 12345"  # Set to None to disable
+# CUSTOM_TRAVEL_ALERT = "This is a 100 character long test travel alert for testing purposes. Please ignore. 12345"  # Set to None to disable
 
 # I2C pins for OLED screens
 OLED1_SCL_PIN = Pin(17)

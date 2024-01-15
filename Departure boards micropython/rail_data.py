@@ -1,11 +1,13 @@
 import re
-import urequests
+import uaiohttpclient
 import uasyncio as asyncio
-import utils
 import ujson
-import credentials
-import config
+import utime
+import micropython
 import gc
+import utils
+import config
+import credentials
 
 class RailData:
     def __init__(self):
@@ -14,32 +16,57 @@ class RailData:
         self.oled1_departures = []
         self.oled2_departures = []
   
-    def fetch_data_from_api(self):
+    async def fetch_data_from_api(self, max_retries=3, retry_seconds=3):
         assert utils.is_wifi_connected(), "Wifi not connected"
         api_url = f"{config.LDBWS_API_URL}/{config.STATION_CRS}"
         request_headers = {"x-apikey": credentials.LDBWS_API_KEY}
 
-        response = urequests.get(url=api_url, headers=request_headers, timeout=10)
+        response = None
+        for i in range(max_retries):
+            try:
+                print(f"Fetching api data. System uptime: {utime.ticks_ms() // 3600000:02}:{(utime.ticks_ms() // 60000) % 60:02}:{(utime.ticks_ms() // 1000) % 60:02}") # Debug print
+                print("Loading API data. GC BEFORE attempt:")
+                gc.collect() # Seems to help make space for the response in memory
+                micropython.mem_info()
 
-        # Check the status code of the response
-        if response.status_code < 200 or response.status_code >= 300:
-            response.close()
-            raise Exception(f"HTTP request failed with status code {response.status_code}")
+                response = await uaiohttpclient.request("GET", api_url)
+                
+                json_data = await response.json()
 
-        try:
-            json_data = ujson.loads(response.text)
-        except ValueError:
-            print("Error parsing JSON response")
-            json_data = None
+                # Parse the JSON data
+                if json_data:
+                    train_services = json_data.get("trainServices")
+                    if train_services:
+                        self.oled1_departures = self.parse_departures(train_services, config.OLED1_PLATFORM_NUMBER)
+                        self.oled2_departures = self.parse_departures(train_services, config.OLED2_PLATFORM_NUMBER)
 
-        response.close()
-        gc.collect()
-        return json_data
+                    if getattr(config, 'CUSTOM_TRAVEL_ALERT', None) is not None: # Check if CUSTOM_TRAVEL_ALERT is defined in config.py
+                        self.nrcc_message = config.CUSTOM_TRAVEL_ALERT
+
+                    # Break out of the For loop and finish
+                    return
+            except OSError as e:
+                if e.args[0] == 110:  # ETIMEDOUT
+                    print(f"Rail data API request timed out. Attempt {i+1} of {max_retries}. Retry in {retry_seconds} seconds.")
+                    await asyncio.sleep(retry_seconds)
+                else:
+                    print("Error sending request")
+            except ValueError:
+                print("Error parsing JSON response")
+            finally:
+                if response:
+                    response.close()
+                print("Loading API data. GC AFTER attempt:")
+                gc.collect()
+                micropython.mem_info()
 
     def fetch_data_from_file(self):
         try:
-            with open("sample_data.json", "r") as sample_data_file:
-                return ujson.loads(sample_data_file.read())
+            gc.collect()  # Run the garbage collector
+            print("Loading file data. Memory check:")
+            micropython.mem_info()
+            with open(config.OFFLINE_JSON_FILE, 'r') as offline_data_file:
+                return ujson.load(offline_data_file)
         except OSError as e:
             print(f"Error opening or reading file: {e}")
             return None
@@ -55,25 +82,29 @@ class RailData:
 
         try:
             if not config.offline_mode:
-                response_JSON = self.fetch_data_from_api()
-            elif config.offline_mode and not self.oled1_departures and not self.oled2_departures:
+                await self.fetch_data_from_api()
+            else:
                 response_JSON = self.fetch_data_from_file()
+                self.parse_rail_data(response_JSON)
         except Exception as e:
             print(f"Error fetching rail data: {e}. Switching to offline mode and cancelling updates.")
             response_JSON = self.fetch_data_from_file()
+            self.parse_rail_data(response_JSON)
             config.offline_mode = True
 
-        if response_JSON:
-            self.parse_rail_data(response_JSON)
-
-        offline_status = 'offline' if config.offline_mode else 'online'
+        offline_status = 'OFFLINE' if config.offline_mode else 'ONLINE'
         get_departure = lambda d: f"{d['destination']} ({d.get('time_scheduled', 'N/A')})"
         oled1_summary = 'No departures' if not self.oled1_departures else ' and '.join(get_departure(d) for d in self.oled1_departures[:2])
         oled2_summary = 'No departures' if not self.oled2_departures else ' and '.join(get_departure(d) for d in self.oled2_departures[:2])
 
+        # print(
+        #     f"[{offline_status}] get_rail_data() got oled1_departures (Platform {config.OLED1_PLATFORM_NUMBER}): " +
+        #     f"{oled1_summary} and oled2_departures (Platform {config.OLED2_PLATFORM_NUMBER}): {oled2_summary}"
+        # )
+
         print(
-            f"[{offline_status}] get_rail_data() got oled1_departures (Platform {config.OLED1_PLATFORM_NUMBER}): " +
-            f"{oled1_summary} and oled2_departures (Platform {config.OLED2_PLATFORM_NUMBER}): {oled2_summary}"
+            f"[{offline_status}] get_rail_data() got oled1_departures: {self.oled1_departures}" +
+            f"{oled1_summary} and oled2_departures: {self.oled2_departures}"
         )
 
     def parse_service(self, service):
@@ -82,12 +113,12 @@ class RailData:
             "time_scheduled": service.get("std"),
             "time_estimated": service.get("etd"),
             "operator": service.get("operator"),
-            "subsequentCallingPoints": [
-                {
-                    "locationName": calling_point.get("locationName"),
-                    "time_due": calling_point.get("et") if calling_point.get("et") != "On time" else calling_point.get("st"),
-                } for calling_point in service.get("subsequentCallingPoints", [{}])[0].get("callingPoint", [])
-            ]
+            # "subsequentCallingPoints": [
+            #     (
+            #         calling_point.get("locationName"),
+            #         calling_point.get("et") if calling_point.get("et") != "On time" else calling_point.get("st"),
+            #     ) for calling_point in service.get("subsequentCallingPoints", [{}])[0].get("callingPoint", [])
+            # ]
         }
 
     def parse_departures(self, train_services, platform_number):
@@ -121,7 +152,7 @@ class RailData:
                     # print(f"OLED1 departures: {self.oled1_departures}")  # Debug print
                     # print(f"OLED2 departures: {self.oled2_departures}")  # Debug print
 
-                if config.CUSTOM_TRAVEL_ALERT:
+                if getattr(config, 'CUSTOM_TRAVEL_ALERT', None) is not None: # Check if CUSTOM_TRAVEL_ALERT is defined in config.py
                     self.nrcc_message = config.CUSTOM_TRAVEL_ALERT
                 else:
                     self.nrcc_message = self.parse_nrcc_message(data_JSON.get("nrccMessages"))
