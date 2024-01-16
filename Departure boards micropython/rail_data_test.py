@@ -7,7 +7,16 @@ import gc
 import utils
 import config
 import credentials
-from logger import log
+import utime
+import ntptime
+
+# Set global
+# log_file = None
+
+class OfflineModeException(Exception):
+    def __init__(self, message="Application is in offline mode"):
+        self.message = message
+        super().__init__(self.message)
 
 class RailData:
     def __init__(self):
@@ -15,7 +24,6 @@ class RailData:
         self.nrcc_message = ""
         self.oled1_departures = []
         self.oled2_departures = []
-        self.get_rail_data_count = 0
 
     async def fetch_data_from_api(self, max_retries=3):
         assert utils.is_wifi_connected(), "Wifi not connected"
@@ -55,6 +63,9 @@ class RailData:
 
     def fetch_data_from_file(self):
         try:
+            # gc.collect()  # Run the garbage collector
+            # print("Loading file data. Memory check:")
+            # micropython.mem_info()
             with open(config.OFFLINE_JSON_FILE, 'r') as offline_data_file:
                 return ujson.load(offline_data_file)
         except OSError as e:
@@ -70,30 +81,29 @@ class RailData:
         """
         Get data from the National Rail API.
         """
-        self.get_rail_data_count += 1
-        debug_message = f"get_rail_data call {self.get_rail_data_count}. Free memory: {gc.mem_free()}"
-        log(debug_message, level='DEBUG')
-
         response_JSON = None
 
         try:
             if not config.offline_mode:
                 response_JSON = await self.fetch_data_from_api()
             else:
-                debug_message = "Offline mode enabled. Fetching rail data from file."
-                log(debug_message, level='INFO')
-                response_JSON = self.fetch_data_from_file()
-        except (OSError, ValueError, MemoryError) as e:
-            debug_message = f"Error fetching rail data: {e}. Free memory: {gc.mem_free()}. Switching to offline mode and fetching data from file."
+                raise OfflineModeException("Offline mode enabled")
+        except (OSError, ValueError, MemoryError, OfflineModeException) as e:
+            debug_message = f"Error fetching rail data: {e}. Free memory: {gc.mem_free()}. Switching to offline mode and cancelling updates."
             log(debug_message, level='ERROR')
             response_JSON = self.fetch_data_from_file()
+            raise e  # Re-raise the exception to stop the program not recover, for debug.
             # config.offline_mode = True
 
         self.parse_rail_data(response_JSON)
+        # del response_JSON
         gc.collect()
+        # print("Loading data. GC AFTER attempt:")
+        # gc.collect()
+        # micropython.mem_info()
 
         offline_status = 'OFFLINE' if config.offline_mode else 'ONLINE'
-        get_departure = lambda d: f"{d['destination']} ({d['time_scheduled']})"
+        get_departure = lambda d: f"{d['destination']} ({d.get('time_scheduled', 'N/A')})"
         oled1_summary = 'No departures' if not self.oled1_departures else ' and '.join(get_departure(d) for d in self.oled1_departures[:2])
         oled2_summary = 'No departures' if not self.oled2_departures else ' and '.join(get_departure(d) for d in self.oled2_departures[:2])
 
@@ -103,9 +113,14 @@ class RailData:
         )
         log(debug_message, level='DEBUG')
 
+        # print(
+        #     f"[{offline_status}] get_rail_data() got oled1_departures: {self.oled1_departures} " +
+        #     f"and oled2_departures: {self.oled2_departures}"
+        # )
+
     def parse_service(self, service):
         if not service:
-            return None
+            return None  # or return a different default value
 
         return {
             "destination": service.get("destination", [{}])[0].get("locationName"),
@@ -163,10 +178,18 @@ class RailData:
             debug_message = f"An error occurred while parsing rail data: {e}"
             log(debug_message, level='ERROR')
 
-async def main():
-    # global log_file
+def log(message, level='INFO'):
+    timestamp = utime.localtime(utime.time())
+    formatted_timestamp = "{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(*timestamp)
+    log_message = f"{formatted_timestamp} [{level}]: {message}\n"
 
-    # log_file = open('rail_data_log.txt', 'a')
+    print(log_message)
+    log_file.write(log_message)
+
+async def main():
+    global log_file
+
+    log_file = open('rail_data_log.txt', 'a')
 
     utils.connect_wifi()
 

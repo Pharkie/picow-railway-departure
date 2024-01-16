@@ -70,9 +70,9 @@ async def display_first_departure(oled, fd_oled, first_departure):
     clear_line(oled, config.THIN_LINETWO_Y)
     await asyncio.sleep(2)
 
-    # # Second line: scroll the calling points
-    # await scroll_text(oled, format_calling_points(first_departure), config.THIN_LINETWO_Y)
-    # await asyncio.sleep(3)
+    # Second line: scroll the calling points
+    await scroll_text(oled, format_calling_points(first_departure), config.THIN_LINETWO_Y)
+    await asyncio.sleep(3)
     
     if display_departure_task:
         display_departure_task.cancel()
