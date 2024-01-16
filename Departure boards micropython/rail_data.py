@@ -2,7 +2,6 @@ import re
 import urequests
 import asyncio
 import ujson
-import micropython
 import gc
 import utils
 import config
@@ -11,7 +10,6 @@ from logger import log
 
 class RailData:
     def __init__(self):
-        # self.nrcc_message = "Some long sample text would go here if there was a possibility that there were problems on the rail network somewhere I think?"
         self.nrcc_message = ""
         self.oled1_departures = []
         self.oled2_departures = []
@@ -46,9 +44,8 @@ class RailData:
                 log(debug_message, level='ERROR')
                 if i < max_retries - 1:  # No delay after the last attempt
                     await asyncio.sleep(2 ** i)  # Exponential backoff
-                raise e # Re-raise the exception to stop the program not recover, for debug.
-                # else:
-                #     raise
+                raise e # Re-raise the exception to stop the program not recover.
+
             finally:
                 if response:
                     response.close()
@@ -87,7 +84,7 @@ class RailData:
             debug_message = f"Error fetching rail data: {e}. Free memory: {gc.mem_free()}. Switching to offline mode and fetching data from file."
             log(debug_message, level='ERROR')
             response_JSON = self.fetch_data_from_file()
-            # config.offline_mode = True
+            # config.offline_mode = True # Switch to offline mode if online mode fails [disabled]
 
         self.parse_rail_data(response_JSON)
         gc.collect()
@@ -148,14 +145,9 @@ class RailData:
                     # print(f"All services: {train_services}")  # Debug print
                     self.oled1_departures = self.parse_departures(train_services, oled1_platform_number)
                     self.oled2_departures = self.parse_departures(train_services, oled2_platform_number)
-                    # For testing purposes
-                    # self.oled1_departures[1] = self.oled1_departures[0] # Hack to make the second departure the same as the first
-                    # self.oled1_departures[0]['subsequentCallingPoints'] = [{'locationName': "testy test", 'time_due': "21:30"}]
-                    # self.oled1_departures[1]['subsequentCallingPoints'] = [{'locationName': "testy test", 'time_due': "21:30"}]
-                    # print(f"OLED1 departures: {self.oled1_departures}")  # Debug print
-                    # print(f"OLED2 departures: {self.oled2_departures}")  # Debug print
 
-                if getattr(config, 'CUSTOM_TRAVEL_ALERT', None) is not None: # Check if CUSTOM_TRAVEL_ALERT is defined in config.py
+                # Check if CUSTOM_TRAVEL_ALERT is defined in config.py
+                if getattr(config, 'CUSTOM_TRAVEL_ALERT', None) is not None: 
                     self.nrcc_message = config.CUSTOM_TRAVEL_ALERT
                 else:
                     self.nrcc_message = self.parse_nrcc_message(data_JSON.get("nrccMessages"))
@@ -164,10 +156,7 @@ class RailData:
             log(debug_message, level='ERROR')
 
 async def main():
-    # global log_file
-
-    # log_file = open('rail_data_log.txt', 'a')
-
+    import ntptime
     utils.connect_wifi()
 
     if utils.is_wifi_connected():
@@ -176,17 +165,14 @@ async def main():
 
         loop_counter = 0
 
-        try:
-            while True:
-                loop_counter += 1
-                debug_message = f"Loop {loop_counter}. Free memory: {gc.mem_free()}"
-                log(debug_message, level='DEBUG')
+        while True:
+            loop_counter += 1
+            debug_message = f"Loop {loop_counter}. Free memory: {gc.mem_free()}"
+            log(debug_message, level='DEBUG')
 
-                await rail_data_instance.get_rail_data()
+            await rail_data_instance.get_rail_data()
 
-                await asyncio.sleep(0.5)
-        finally:
-            log_file.close()
+            await asyncio.sleep(0.5)
     else:
         debug_message = "No wifi connection. Exiting."
         log(debug_message, level='ERROR')

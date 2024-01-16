@@ -7,6 +7,6 @@ def log(message, level='INFO'):
     log_message = f"{formatted_timestamp} [{level}]: {message}\n"
 
     print(log_message)
-    log_file = open('rail_data_log.txt', 'a')
-    log_file.write(log_message) # Assumes log_file is a global variable
-    log_file.close()
+    # log_file = open('rail_data_log.txt', 'a')
+    # log_file.write(log_message) # Assumes log_file is a global variable
+    # log_file.close()

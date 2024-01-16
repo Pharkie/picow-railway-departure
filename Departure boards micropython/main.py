@@ -7,15 +7,17 @@ Description: Mini Pico W OLED departure boards for model railway
 GitHub Repository: https://github.com/Pharkie/picow-railway-departure
 Based on work by Stewart Watkiss - PenguinTutor
 License: GNU General Public License (GPL)
+
+Known issues: doesn't handle DST change while device is running, since only checks at startup.
+
 """
 from machine import I2C
 import uasyncio as asyncio
-import urandom
 import utime
 import datetime_utils
 import utils
 import rail_data
-from ssd1306 import SSD1306_I2C
+from lib.ssd1306 import SSD1306_I2C
 from lib.fdrawer import FontDrawer
 import display_utils
 import config
@@ -155,19 +157,7 @@ async def main():
     oled1_task, oled2_task = None, None
 
     while True: # Main loop runs once per second
-        # Set clock and rail data updates to run in the background
-        # if not config.offline_mode:
-            # TODO: Make just do the DST check not the clock sync
-            # if sync_rtc_task is None or sync_rtc_task.done(): # Only needed to cover DST changes while running anyway. Make new func if needed.
-            #     sync_rtc_task = asyncio.create_task(run_periodically(datetime_utils.sync_rtc, urandom.randint(60, 6000)))
-            # if update_rail_data_task is None or update_rail_data_task.done():
-            #     update_rail_data_task = asyncio.create_task(run_periodically(rail_data_instance.get_rail_data, 10))
-
-        # Cancel the update tasks if the periodic call to get_rail_data switched prog to offline mode
-        # Not using Else because it could change above.
         if config.offline_mode: 
-            # if sync_rtc_task and not sync_rtc_task.done():
-            #     sync_rtc_task.cancel()
             if update_rail_data_task and not update_rail_data_task.done():
                 update_rail_data_task.cancel()
 
