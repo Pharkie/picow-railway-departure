@@ -152,7 +152,7 @@ async def main():
 
     update_rail_data_task = asyncio.create_task(run_periodically(rail_data_instance.get_rail_data, 10))
 
-    oled1_task, oled2_task, sync_rtc_task, update_rail_data_task = None, None, None, None
+    oled1_task, oled2_task = None, None
 
     while True: # Main loop runs once per second
         # Set clock and rail data updates to run in the background
