@@ -85,54 +85,62 @@ async def run_periodically(func, wait_seconds):
         await func()
         await asyncio.sleep(wait_seconds)
     
-async def run_one_sequence_one_oled(oled, fd_oled, departures, nrcc_message):
+async def cycle_oled(oled, fd_oled, rail_data_instance, screen_number):
     """
     This coroutine manages the display of departures and travel alerts on an OLED screen.
 
     Parameters:
     oled: An OLED display object.
     fd_oled: A Fontdrawer object for the OLED display.
-    departures: A list of departures to display.
-    nrcc_message: A travel alert message to display.
-    clock_task: An asyncio Task object for displaying the clock.
+    rail_data_instance: An instance of the RailData class that provides the departure information.
+    screen_number: The number of the screen (1 or 2).
 
-    If there are departures, it displays the first departure and, if available, the second departure.
-    If there are no departures, it displays "No departures".
-    If there is a travel alert, it cancels the clock task, displays the alert, and then restarts the clock task.
+    The coroutine retrieves the departures for the specified screen from the rail_data_instance. 
+    If there are departures, it displays the first and, if available, the second departure. 
+    If there are no departures, it displays "No departures". 
+    If there is a travel alert, it displays the alert.
     """
-    # Show first departure for each screen on line one, and scroll the calling points on line two
-    if len(departures) > 0:
-        await display_utils.display_first_departure(oled, fd_oled, departures[0])
-    else:
-        await display_utils.display_no_departures(oled, fd_oled)
+    while True:
+        if screen_number == 1:
+            departures = rail_data_instance.oled1_departures
+        elif screen_number == 2:
+            departures = rail_data_instance.oled2_departures
 
-    # If there is a second departure for this screen, show it on line two
-    if len(departures) > 1:
-        await display_utils.display_second_departure(oled, fd_oled, departures[1])
+        # Show first departure for each screen on line one, and scroll the calling points on line two
+        if len(departures) > 0:
+            await display_utils.display_first_departure(oled, fd_oled, departures[0])
+        else:
+            await display_utils.display_no_departures(oled, fd_oled)
 
-    if nrcc_message:
-        await display_utils.display_travel_alert(oled, fd_oled, nrcc_message)
-        
-    await asyncio.sleep(3)
+        # If there is a second departure for this screen, show it on line two
+        if len(departures) > 1:
+            await display_utils.display_second_departure(oled, fd_oled, departures[1])
+
+        if nrcc_message:
+            await display_utils.display_travel_alert(oled, fd_oled, nrcc_message)
+            
+        await asyncio.sleep(3)
 
 async def main():
     """
-    Initializes and manages the tasks for the OLED displays.
+    The main coroutine.
 
-    It first synchronizes the real-time clock and fetches the initial rail data. 
-    Then, if not in offline mode, it sets up tasks to periodically synchronize the clock 
-    and update the rail data at random intervals.
+    Sets up OLED displays, initializes rail data, and creates tasks to 
+    display the clock, update rail data, and cycle through rail data on 
+    the displays. If not in offline mode, it also connects to Wi-Fi and 
+    updates rail data every 60 seconds.
 
     Parameters:
-    oled1: The first OLED display object.
-    oled2: The second OLED display object.
+        None
 
-    This function is a coroutine and should be used with `await` or `asyncio.create_task()`.
+    Returns:
+        None 
     """
     # print("main() called")
     oled1, oled2 = setup_displays()
 
-    fd_oled1 = FontDrawer(frame_buffer=oled1, font_name = 'dejav_m10')
+    # dejav_m10.bin must be in the root directory
+    fd_oled1 = FontDrawer(frame_buffer=oled1, font_name = 'dejav_m10') 
     fd_oled2 = FontDrawer(frame_buffer=oled2, font_name = 'dejav_m10')
 
     display_utils.display_init_message(oled1, oled2, fd_oled1, fd_oled2)
@@ -152,36 +160,12 @@ async def main():
     asyncio.create_task(display_utils.display_clock(oled1, fd_oled1))
     asyncio.create_task(display_utils.display_clock(oled2, fd_oled2))
 
-    update_rail_data_task = asyncio.create_task(run_periodically(rail_data_instance.get_rail_data, 10))
+    # update_rail_data_task = asyncio.create_task(run_periodically(rail_data_instance.get_rail_data, 10)) # For testing
+    if not config.offline_mode: 
+        asyncio.create_task(run_periodically(rail_data_instance.get_rail_data, 60))
 
-    oled1_task, oled2_task = None, None
-
-    while True: # Main loop runs once per second
-        if config.offline_mode: 
-            if update_rail_data_task and not update_rail_data_task.done():
-                update_rail_data_task.cancel()
-
-        if oled1_task is None or oled1_task.done():
-            oled1_task = asyncio.create_task(
-                run_one_sequence_one_oled(
-                    oled1,
-                    fd_oled1,
-                    rail_data_instance.oled1_departures,
-                    rail_data_instance.nrcc_message
-                )
-            )
-
-        if oled2 and (oled2_task is None or oled2_task.done()):
-            oled2_task = asyncio.create_task(
-                run_one_sequence_one_oled(
-                    oled2,
-                    fd_oled2,
-                    rail_data_instance.oled2_departures,
-                    rail_data_instance.nrcc_message
-                )
-            )
-        
-        await asyncio.sleep(1) # Without this, nothing has time to run
+    asyncio.create_task(cycle_oled(oled1, fd_oled1, rail_data_instance, 1))
+    asyncio.create_task(cycle_oled(oled2, fd_oled2, rail_data_instance, 2))
 
 if __name__ == "__main__":
     asyncio.run(main())
