@@ -26,10 +26,10 @@ def display_init_message(oled1, oled2, fd_oled1, fd_oled2):
             oled.show()
 
 async def display_departure_line(oled, fd_oled, departure_number, destination, time_scheduled, y_pos):
-    max_length = const(12)
+    _max_length = const(12)
 
     # Split the destination into lines of up to max_length characters each, breaking at word boundaries
-    lines = wrap_text(destination, max_length)
+    lines = wrap_text(destination, _max_length)
 
     while True:
         for line in lines:

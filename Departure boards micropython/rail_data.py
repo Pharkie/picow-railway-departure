@@ -23,6 +23,7 @@ class RailData:
         for i in range(max_retries):
             response = None
             try:
+                gc.collect()
                 response = urequests.get(url=api_url, headers=request_headers, timeout=10)
 
                 if response is None:
@@ -44,7 +45,7 @@ class RailData:
                 log(debug_message, level='ERROR')
                 if i < max_retries - 1:  # No delay after the last attempt
                     await asyncio.sleep(2 ** i)  # Exponential backoff
-                raise e # Re-raise the exception to stop the program not recover.
+                # raise e # Re-raise the exception to stop the program not recover.
 
             finally:
                 if response:
@@ -68,23 +69,15 @@ class RailData:
         Get data from the National Rail API.
         """
         self.get_rail_data_count += 1
-        debug_message = f"get_rail_data call {self.get_rail_data_count}. Free memory: {gc.mem_free()}"
+        debug_message = f"\nget_rail_data call {self.get_rail_data_count}. Free memory: {gc.mem_free()}"
         log(debug_message, level='DEBUG')
 
         response_JSON = None
 
-        try:
-            if not config.offline_mode:
-                response_JSON = await self.fetch_data_from_api()
-            else:
-                debug_message = "Offline mode enabled. Fetching rail data from file."
-                log(debug_message, level='INFO')
-                response_JSON = self.fetch_data_from_file()
-        except (OSError, ValueError, MemoryError) as e:
-            debug_message = f"Error fetching rail data: {e}. Free memory: {gc.mem_free()}. Switching to offline mode and fetching data from file."
-            log(debug_message, level='ERROR')
+        if config.offline_mode:
             response_JSON = self.fetch_data_from_file()
-            # config.offline_mode = True # Switch to offline mode if online mode fails [disabled]
+        else:
+            response_JSON = await self.fetch_data_from_api()
 
         self.parse_rail_data(response_JSON)
         gc.collect()
@@ -121,7 +114,7 @@ class RailData:
         if train_services is None:
             return []
         return [
-            self.parse_service(service) for service in train_services if service.get("platform") == platform_number
+            self.parse_service(service) for i, service in enumerate(train_services) if service.get("platform") == platform_number
         ][:2]
 
     def parse_nrcc_message(self, nrcc_messages):

@@ -16,6 +16,7 @@ import uasyncio as asyncio
 import utime
 import datetime_utils
 import utils
+import gc
 import rail_data
 from lib.ssd1306 import SSD1306_I2C
 from lib.fdrawer import FontDrawer
@@ -106,15 +107,13 @@ async def cycle_oled(oled, fd_oled, rail_data_instance, screen_number):
         elif screen_number == 2:
             departures = rail_data_instance.oled2_departures
 
-        # Show first departure for each screen on line one, and scroll the calling points on line two
-        if len(departures) > 0:
+        if departures:
             await display_utils.display_first_departure(oled, fd_oled, departures[0])
+
+            if len(departures) > 1:
+                await display_utils.display_second_departure(oled, fd_oled, departures[1])
         else:
             await display_utils.display_no_departures(oled, fd_oled)
-
-        # If there is a second departure for this screen, show it on line two
-        if len(departures) > 1:
-            await display_utils.display_second_departure(oled, fd_oled, departures[1])
 
         if rail_data_instance.nrcc_message:
             await display_utils.display_travel_alert(oled, fd_oled, rail_data_instance.nrcc_message)
@@ -136,6 +135,8 @@ async def main():
     Returns:
         None 
     """
+    gc.collect()
+
     # print("main() called")
     oled1, oled2 = setup_displays()
 
@@ -169,7 +170,10 @@ async def main():
 
     # Run the above tasks until Exception or KeyboardInterrupt
     while True:
-        await asyncio.sleep(1)
+        gc.collect() # Fixes a memory leak someplace
+        print(f"Main loop cycle. Free memory: {gc.mem_free()}")
+        gc.threshold(gc.mem_free() // 4 + gc.mem_alloc()) # Set threshold for gc at 25% free memory
+        await asyncio.sleep(25)
 
 if __name__ == "__main__":
     asyncio.run(main())
