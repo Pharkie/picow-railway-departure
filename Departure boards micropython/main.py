@@ -116,8 +116,8 @@ async def cycle_oled(oled, fd_oled, rail_data_instance, screen_number):
         if len(departures) > 1:
             await display_utils.display_second_departure(oled, fd_oled, departures[1])
 
-        if nrcc_message:
-            await display_utils.display_travel_alert(oled, fd_oled, nrcc_message)
+        if rail_data_instance.nrcc_message:
+            await display_utils.display_travel_alert(oled, fd_oled, rail_data_instance.nrcc_message)
             
         await asyncio.sleep(3)
 
@@ -166,6 +166,10 @@ async def main():
 
     asyncio.create_task(cycle_oled(oled1, fd_oled1, rail_data_instance, 1))
     asyncio.create_task(cycle_oled(oled2, fd_oled2, rail_data_instance, 2))
+
+    # Run the above tasks until Exception or KeyboardInterrupt
+    while True:
+        await asyncio.sleep(1)
 
 if __name__ == "__main__":
     asyncio.run(main())

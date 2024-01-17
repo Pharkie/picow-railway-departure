@@ -4,7 +4,7 @@ from machine import Pin
 STATION_CRS = "PMW"  # Station's CRS code
 
 # offline_mode = True  # Set to True to use sample_data.json instead of the live API.
-offline_mode = True  # Comment out one or the other
+offline_mode = False  # Comment out one or the other
 
 OFFLINE_JSON_FILE = "sample_data.json"  # File to use for offline mode
 
