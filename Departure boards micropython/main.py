@@ -135,6 +135,7 @@ async def main():
     Returns:
         None 
     """
+    gc.threshold(gc.mem_free() // 4 + gc.mem_alloc()) # Set threshold for gc at 25% free memory
     gc.collect()
 
     # print("main() called")
@@ -172,8 +173,7 @@ async def main():
     while True:
         gc.collect() # Fixes a memory leak someplace
         print(f"Main loop cycle. Free memory: {gc.mem_free()}")
-        gc.threshold(gc.mem_free() // 4 + gc.mem_alloc()) # Set threshold for gc at 25% free memory
-        await asyncio.sleep(25)
+        await asyncio.sleep(50)
 
 if __name__ == "__main__":
     asyncio.run(main())

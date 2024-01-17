@@ -45,7 +45,7 @@ class RailData:
                 log(debug_message, level='ERROR')
                 if i < max_retries - 1:  # No delay after the last attempt
                     await asyncio.sleep(2 ** i)  # Exponential backoff
-                # raise e # Re-raise the exception to stop the program not recover.
+                raise e # Re-raise the exception to stop the program not recover.
 
             finally:
                 if response:
@@ -69,7 +69,7 @@ class RailData:
         Get data from the National Rail API.
         """
         self.get_rail_data_count += 1
-        debug_message = f"\nget_rail_data call {self.get_rail_data_count}. Free memory: {gc.mem_free()}"
+        debug_message = f"get_rail_data call {self.get_rail_data_count}. Free memory: {gc.mem_free()}"
         log(debug_message, level='DEBUG')
 
         response_JSON = None
