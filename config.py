@@ -3,11 +3,23 @@ from micropython import const
 from machine import Pin
 STATION_CRS = "PMW"  # Station's CRS code
 
+# Number of services to request (0-10). 
+# The risk is that services for the requested platform(s) may not appear in the first X results.
+# With this API (and others I looked at) there's ** no way to ask for services only from a given platform **.
+# We want a small number (e.g. 4) for a large station (e.g. EUS), but could maybe afford a larger number for a small station.
+# API responses over 50kb become likely to run out of memory and crash out.
+# Finding a query that works for a given station may require adjustments to the query and parsing of the JSON to keep processing
+# within Pico's limited memory e.g. adding a "To" filter to the query.
+# The comprehensive alternative would be to create an Amazon Lambda function to query the API and
+# return a filtered response via the Amazon API Gateway.
+NUMBER_OF_SERVICES = const(6)
+
 # offline_mode = True  # Set to True to use sample_data.json instead of the live API.
 offline_mode = False  # Comment out one or the other
 
 OFFLINE_JSON_FILE = "sample_data_big.json"  # File to use for offline mode
 
+# No idea if this works for Platform A etc (e.g. at PAD).
 OLED1_PLATFORM_NUMBER = "1"  # Platform number to show departures for. Note: string not an integer.
 OLED2_PLATFORM_NUMBER = "2"  # Platform number to show departures for. Note: string not an integer.
 

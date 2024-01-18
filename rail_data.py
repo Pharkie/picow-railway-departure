@@ -1,5 +1,5 @@
 import re
-import urequests
+import requests
 import asyncio
 import ujson
 import gc
@@ -17,14 +17,14 @@ class RailData:
 
     async def fetch_data_from_api(self, max_retries=3):
         assert utils.is_wifi_connected(), "Wifi not connected"
-        api_url = f"{config.LDBWS_API_URL}/{config.STATION_CRS}"
+        api_url = f"{config.LDBWS_API_URL}/{config.STATION_CRS}?numRows={config.NUMBER_OF_SERVICES}"
         request_headers = {"x-apikey": credentials.LDBWS_API_KEY}
 
         for i in range(max_retries):
             response = None
             try:
                 gc.collect()
-                response = urequests.get(url=api_url, headers=request_headers, timeout=10)
+                response = requests.get(url=api_url, headers=request_headers, timeout=10)
 
                 if response is None:
                     log("No response from API", level='ERROR')
