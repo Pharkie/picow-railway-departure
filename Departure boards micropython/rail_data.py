@@ -6,7 +6,7 @@ import gc
 import utils
 import config
 import credentials
-from logger import log
+from utils import log
 
 class RailData:
     def __init__(self):
@@ -27,25 +27,22 @@ class RailData:
                 response = urequests.get(url=api_url, headers=request_headers, timeout=10)
 
                 if response is None:
-                    debug_message = "No response from API"
-                    log(debug_message, level='ERROR')
+                    log("No response from API", level='ERROR')
                     raise OSError(debug_message)
 
                 if response.status_code < 200 or response.status_code >= 300:
-                    debug_message = f"HTTP request failed, status code {response.status_code}"
-                    log(debug_message, level='ERROR')
+                    log(f"HTTP request failed, status code {response.status_code}", level='ERROR')
                     raise OSError(debug_message)
 
                 json_data = ujson.loads(response.text)
 
                 gc.collect()
                 return json_data
-            except (OSError, ValueError, TypeError) as e:
-                debug_message = f"Error with request to {api_url} on attempt {i+1}: {e}"
-                log(debug_message, level='ERROR')
+            except (OSError, ValueError, TypeError, MemoryError) as e:
+                log(f"Error with request to {api_url} on attempt {i+1}: {e}", level='ERROR')
                 if i < max_retries - 1:  # No delay after the last attempt
                     await asyncio.sleep(2 ** i)  # Exponential backoff
-                raise e # Re-raise the exception to stop the program not recover.
+                raise e # Re-raise the exception to stop the program.
 
             finally:
                 if response:
@@ -56,12 +53,10 @@ class RailData:
             with open(config.OFFLINE_JSON_FILE, 'r') as offline_data_file:
                 return ujson.load(offline_data_file)
         except OSError as e:
-            debug_message = f"Error opening or reading file: {e}"
-            log(debug_message, level='ERROR')
+            log(f"Error opening or reading file: {e}", level='ERROR')
             return None
         except ValueError as e:
-            debug_message = f"Error parsing JSON data: {e}"
-            log(debug_message, level='ERROR')
+            log(f"Error parsing JSON data: {e}", level='ERROR')
             return None
 
     async def get_rail_data(self):
@@ -69,8 +64,7 @@ class RailData:
         Get data from the National Rail API.
         """
         self.get_rail_data_count += 1
-        debug_message = f"get_rail_data call {self.get_rail_data_count}. Free memory: {gc.mem_free()}"
-        log(debug_message, level='DEBUG')
+        log(f"get_rail_data call {self.get_rail_data_count}. Free memory: {gc.mem_free()}", level='DEBUG')
 
         response_JSON = None
 
@@ -86,12 +80,12 @@ class RailData:
         get_departure = lambda d: f"{d['destination']} ({d['time_scheduled']})"
         oled1_summary = 'No departures' if not self.oled1_departures else ' and '.join(get_departure(d) for d in self.oled1_departures[:2])
         oled2_summary = 'No departures' if not self.oled2_departures else ' and '.join(get_departure(d) for d in self.oled2_departures[:2])
-
-        debug_message = (
+        
+        log(
             f"[{offline_status}] get_rail_data() got oled1_departures (Platform {config.OLED1_PLATFORM_NUMBER}): " +
-            f"{oled1_summary} and oled2_departures (Platform {config.OLED2_PLATFORM_NUMBER}): {oled2_summary}"
+            f"{oled1_summary} and oled2_departures (Platform {config.OLED2_PLATFORM_NUMBER}): {oled2_summary}", 
+            level='DEBUG'
         )
-        log(debug_message, level='DEBUG')
 
     def parse_service(self, service):
         if not service:
@@ -145,8 +139,7 @@ class RailData:
                 else:
                     self.nrcc_message = self.parse_nrcc_message(data_JSON.get("nrccMessages"))
         except Exception as e:
-            debug_message = f"An error occurred while parsing rail data: {e}"
-            log(debug_message, level='ERROR')
+            log(f"Error occurred while parsing rail data: {e}", level='ERROR')
 
 async def main():
     import ntptime
@@ -160,15 +153,16 @@ async def main():
 
         while True:
             loop_counter += 1
-            debug_message = f"Loop {loop_counter}. Free memory: {gc.mem_free()}"
-            log(debug_message, level='DEBUG')
+            log(f"Loop {loop_counter}. Free memory: {gc.mem_free()}", level='DEBUG')
+
+            if loop_counter % 5 == 0:
+                gc.collect()  # Fixes a memory leak someplace
 
             await rail_data_instance.get_rail_data()
 
             await asyncio.sleep(0.5)
     else:
-        debug_message = "No wifi connection. Exiting."
-        log(debug_message, level='ERROR')
+        log("No wifi connection. Exiting.", level='ERROR')
 
 if __name__ == "__main__":
     asyncio.run(main())

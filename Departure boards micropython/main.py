@@ -15,14 +15,14 @@ from machine import I2C
 import uasyncio as asyncio
 import utime
 import datetime_utils
-import utils
 import gc
 import rail_data
 from lib.ssd1306 import SSD1306_I2C
 from lib.fdrawer import FontDrawer
 import display_utils
 import config
-# from logger import log
+import utils
+from utils import log
 
 def initialize_oled(i2c, display_name):
     """
@@ -83,7 +83,11 @@ async def run_periodically(func, wait_seconds):
     """
     await asyncio.sleep(wait_seconds)
     while True:
-        await func()
+        try:
+            await func()
+        except Exception as e:
+            log(f"run_periodically() caught exception so exiting. Free memory: {gc.mem_free()}. Details: {e} ", level='ERROR')
+            raise  # re-raise the exception to stop the program
         await asyncio.sleep(wait_seconds)
     
 async def cycle_oled(oled, fd_oled, rail_data_instance, screen_number):
@@ -171,9 +175,9 @@ async def main():
 
     # Run the above tasks until Exception or KeyboardInterrupt
     while True:
-        gc.collect() # Fixes a memory leak someplace
+        gc.collect()  # Fixes a memory leak someplace
         print(f"Main loop cycle. Free memory: {gc.mem_free()}")
-        await asyncio.sleep(50)
+        await asyncio.sleep(25)
 
 if __name__ == "__main__":
     asyncio.run(main())
