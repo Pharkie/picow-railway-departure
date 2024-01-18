@@ -1,1 +1,0 @@
-Raspberry Pi G-scale Model Railway Departure Board Sign by penguintutor on Thingiverse: https://www.thingiverse.com/thing:4846655

@@ -1,0 +1,1662 @@
+{
+    "trainServices": [
+      {
+        "subsequentCallingPoints": [
+          {
+            "callingPoint": [
+              {
+                "locationName": "Conwy",
+                "crs": "CNW",
+                "st": "14:26",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A2"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Llandudno Junction",
+                "crs": "LLJ",
+                "st": "14:31",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A2"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Colwyn Bay",
+                "crs": "CWB",
+                "st": "14:37",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A2"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Rhyl",
+                "crs": "RHL",
+                "st": "14:48",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A2"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Prestatyn",
+                "crs": "PRT",
+                "st": "14:53",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A2"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Flint",
+                "crs": "FLN",
+                "st": "15:08",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A2"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Shotton",
+                "crs": "SHT",
+                "st": "15:14",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A2"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Chester",
+                "crs": "CTR",
+                "st": "15:27",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A2"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Wrexham General",
+                "crs": "WRX",
+                "st": "15:50",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A2"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Ruabon",
+                "crs": "RUA",
+                "st": "15:57",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A2"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Chirk",
+                "crs": "CRK",
+                "st": "16:04",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A2"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Gobowen",
+                "crs": "GOB",
+                "st": "16:09",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A2"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Shrewsbury",
+                "crs": "SHR",
+                "st": "16:30",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A2"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Wellington (Shropshire)",
+                "crs": "WLN",
+                "st": "16:47",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A2"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Telford Central",
+                "crs": "TFC",
+                "st": "16:53",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A2"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Wolverhampton",
+                "crs": "WVH",
+                "st": "17:10",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A2"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Sandwell & Dudley",
+                "crs": "SAD",
+                "st": "17:20",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A2"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Birmingham New Street",
+                "crs": "BHM",
+                "st": "17:32",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A2"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Birmingham International",
+                "crs": "BHI",
+                "st": "17:53",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "A2"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "B2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              }
+            ],
+            "serviceType": "train",
+            "serviceChangeRequired": false,
+            "assocIsCancelled": false
+          }
+        ],
+        "formation": {
+          "coaches": [
+            {
+              "coachClass": "Standard",
+              "toilet": {
+                "status": "InService",
+                "Value": "Accessible"
+              },
+              "loadingSpecified": false,
+              "number": "A1"
+            },
+            {
+              "coachClass": "Standard",
+              "toilet": {
+                "status": "InService",
+                "Value": "Accessible"
+              },
+              "loadingSpecified": false,
+              "number": "A2"
+            },
+            {
+              "coachClass": "Standard",
+              "toilet": {
+                "status": "InService",
+                "Value": "Accessible"
+              },
+              "loadingSpecified": false,
+              "number": "B1"
+            },
+            {
+              "coachClass": "Standard",
+              "toilet": {
+                "status": "InService",
+                "Value": "Accessible"
+              },
+              "loadingSpecified": false,
+              "number": "B2"
+            }
+          ]
+        },
+        "futureCancellation": false,
+        "futureDelay": false,
+        "origin": [
+          {
+            "locationName": "Holyhead",
+            "crs": "HHD",
+            "assocIsCancelled": false
+          }
+        ],
+        "destination": [
+          {
+            "locationName": "Birmingham International",
+            "crs": "BHI",
+            "assocIsCancelled": false
+          }
+        ],
+        "rsid": "AW305900",
+        "std": "14:20",
+        "etd": "On time",
+        "platform": "1",
+        "operator": "Transport for Wales",
+        "operatorCode": "AW",
+        "isCircularRoute": false,
+        "isCancelled": false,
+        "filterLocationCancelled": false,
+        "serviceType": "train",
+        "length": 0,
+        "detachFront": false,
+        "isReverseFormation": false,
+        "serviceID": "3532609PNMNMWR_"
+      },
+      {
+        "subsequentCallingPoints": [
+          {
+            "callingPoint": [
+              {
+                "locationName": "Llanfairfechan",
+                "crs": "LLF",
+                "st": "14:32",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Bangor (Gwynedd)",
+                "crs": "BNG",
+                "st": "14:41",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Llanfairpwll",
+                "crs": "LPG",
+                "st": "14:48",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Bodorgan",
+                "crs": "BOR",
+                "st": "14:58",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Ty Croes",
+                "crs": "TYC",
+                "st": "15:03",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Rhosneigr",
+                "crs": "RHO",
+                "st": "15:06",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Valley",
+                "crs": "VAL",
+                "st": "15:12",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Holyhead",
+                "crs": "HHD",
+                "st": "15:20",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "formation": {
+                  "coaches": [
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "1"
+                    },
+                    {
+                      "coachClass": "Standard",
+                      "toilet": {
+                        "status": "InService",
+                        "Value": "Accessible"
+                      },
+                      "loadingSpecified": false,
+                      "number": "2"
+                    }
+                  ]
+                },
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              }
+            ],
+            "serviceType": "train",
+            "serviceChangeRequired": false,
+            "assocIsCancelled": false
+          }
+        ],
+        "formation": {
+          "coaches": [
+            {
+              "coachClass": "Standard",
+              "toilet": {
+                "status": "InService",
+                "Value": "Accessible"
+              },
+              "loadingSpecified": false,
+              "number": "1"
+            },
+            {
+              "coachClass": "Standard",
+              "toilet": {
+                "status": "InService",
+                "Value": "Accessible"
+              },
+              "loadingSpecified": false,
+              "number": "2"
+            }
+          ]
+        },
+        "futureCancellation": false,
+        "futureDelay": false,
+        "origin": [
+          {
+            "locationName": "Birmingham International",
+            "crs": "BHI",
+            "assocIsCancelled": false
+          }
+        ],
+        "destination": [
+          {
+            "locationName": "Holyhead",
+            "crs": "HHD",
+            "assocIsCancelled": false
+          }
+        ],
+        "rsid": "AW305400",
+        "std": "14:28",
+        "etd": "On time",
+        "platform": "2",
+        "operator": "Transport for Wales",
+        "operatorCode": "AW",
+        "isCircularRoute": false,
+        "isCancelled": false,
+        "filterLocationCancelled": false,
+        "serviceType": "train",
+        "length": 0,
+        "detachFront": false,
+        "isReverseFormation": false,
+        "serviceID": "3537686PNMNMWR_"
+      },
+      {
+        "subsequentCallingPoints": [
+          {
+            "callingPoint": [
+              {
+                "locationName": "Conwy",
+                "crs": "CNW",
+                "st": "15:18",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Llandudno Junction",
+                "crs": "LLJ",
+                "st": "15:23",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Colwyn Bay",
+                "crs": "CWB",
+                "st": "15:32",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Rhyl",
+                "crs": "RHL",
+                "st": "15:42",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Prestatyn",
+                "crs": "PRT",
+                "st": "15:49",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Flint",
+                "crs": "FLN",
+                "st": "16:02",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Chester",
+                "crs": "CTR",
+                "st": "16:18",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Wrexham General",
+                "crs": "WRX",
+                "st": "16:37",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Ruabon",
+                "crs": "RUA",
+                "st": "16:44",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Chirk",
+                "crs": "CRK",
+                "st": "16:50",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Gobowen",
+                "crs": "GOB",
+                "st": "16:56",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Shrewsbury",
+                "crs": "SHR",
+                "st": "17:15",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Church Stretton",
+                "crs": "CTT",
+                "st": "17:30",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Craven Arms",
+                "crs": "CRV",
+                "st": "17:39",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Ludlow",
+                "crs": "LUD",
+                "st": "17:46",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Leominster",
+                "crs": "LEO",
+                "st": "17:56",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Hereford",
+                "crs": "HFD",
+                "st": "18:13",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Abergavenny",
+                "crs": "AGV",
+                "st": "18:39",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Cwmbran",
+                "crs": "CWM",
+                "st": "18:53",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Newport (South Wales)",
+                "crs": "NWP",
+                "st": "19:06",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              },
+              {
+                "locationName": "Cardiff Central",
+                "crs": "CDF",
+                "st": "19:25",
+                "et": "On time",
+                "isCancelled": false,
+                "length": 0,
+                "detachFront": false,
+                "affectedByDiversion": false,
+                "rerouteDelay": 0
+              }
+            ],
+            "serviceType": "train",
+            "serviceChangeRequired": false,
+            "assocIsCancelled": false
+          }
+        ],
+        "futureCancellation": false,
+        "futureDelay": false,
+        "origin": [
+          {
+            "locationName": "Holyhead",
+            "crs": "HHD",
+            "assocIsCancelled": false
+          }
+        ],
+        "destination": [
+          {
+            "locationName": "Cardiff Central",
+            "crs": "CDF",
+            "via": "via Shrewsbury",
+            "assocIsCancelled": false
+          }
+        ],
+        "std": "15:12",
+        "etd": "On time",
+        "platform": "1",
+        "operator": "Transport for Wales",
+        "operatorCode": "AW",
+        "isCircularRoute": false,
+        "isCancelled": false,
+        "filterLocationCancelled": false,
+        "serviceType": "train",
+        "length": 0,
+        "detachFront": false,
+        "isReverseFormation": false,
+        "serviceID": "3539784PNMNMWR_"
+      }
+    ],
+    "Xmlns": {
+      "Count": 8
+    },
+    "generatedAt": "2024-01-17T13:44:03.1804115+00:00",
+    "locationName": "Penmaenmawr",
+    "crs": "PMW",
+    "filterType": "to",
+    "platformAvailable": true,
+    "areServicesAvailable": true
+  }
