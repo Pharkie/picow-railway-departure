@@ -33,6 +33,9 @@ class RailData:
                 if response.status_code < 200 or response.status_code >= 300:
                     log(f"HTTP request failed, status code {response.status_code}", level='ERROR')
                     raise OSError(debug_message)
+                
+                # Log the size of the response data in KB, rounded to 2 decimal places
+                log(f"API response: {round(len(response.content) / 1024, 2)} KB")
 
                 json_data = ujson.loads(response.text)
 
@@ -144,6 +147,8 @@ class RailData:
 async def main():
     import ntptime
     utils.connect_wifi()
+
+    log("\n\n[Program started]\n", level="INFO")
 
     if utils.is_wifi_connected():
         ntptime.settime()

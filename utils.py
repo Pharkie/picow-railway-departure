@@ -12,17 +12,38 @@ import utime # type: ignore
 import credentials
 import config
 import display_utils
+import os
 
 def log(message, level='INFO'):
-
+    max_log_size=100*1024
+    max_log_files=2
     timestamp = utime.localtime(utime.time())
     formatted_timestamp = "{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(*timestamp)
     log_message = f"{formatted_timestamp} [{level}]: {message}\n"
 
     print(log_message)
-    # log_file = open('rail_data_log.txt', 'a')
-    # log_file.write(log_message) # Assumes log_file is a global variable
-    # log_file.close()
+
+    log_filename = 'rail_data_log.txt'
+    try:
+        if os.stat(log_filename)[6] > max_log_size:
+            # If the log file is too big, rotate it
+            print(f"Rotating log file {log_filename}. Max log size: {max_log_size} bytes, max log files: {max_log_files}")
+
+            try:
+                os.remove(f"{log_filename}.{max_log_files}")
+            except OSError:
+                pass
+            for i in range(max_log_files-1, 0, -1):
+                try:
+                    os.rename(f"{log_filename}.{i}", f"{log_filename}.{i+1}")
+                except OSError:
+                    pass
+            os.rename(log_filename, f"{log_filename}.1")
+    except OSError:
+        pass
+
+    with open(log_filename, 'a') as log_file:
+        log_file.write(log_message)
 
 def connect_wifi(oled1=None, oled2=None, fd_oled1=None, fd_oled2=None):
     # print("connect_wifi() called")
