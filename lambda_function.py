@@ -59,13 +59,14 @@ def lambda_handler(event, context):
     filtered_services = [
         {
             "destination": service.get("destination", [{}])[0].get("locationName"),
+            "platform": service.get("platform"),
             "time_scheduled": service.get("std"),
             "time_estimated": service.get("etd"),
             "operator": service.get("operator"),
             "subsequentCallingPoints": service.get("subsequentCallingPoints")
         }
         for service in data.get('trainServices', [])
-        if platform_numbers is None or service.get('platform') in platform_numbers
+        if platform_numbers is None or (service.get('platform') and service.get('platform') in platform_numbers)
     ]
     
     # Limit to the first two services for each platform

@@ -18,7 +18,10 @@ def log(message, level='INFO'):
     max_log_size=100*1024
     max_log_files=2
     timestamp = utime.localtime(utime.time())
-    formatted_timestamp = "{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(*timestamp)
+    formatted_timestamp = (
+        f"{timestamp[0]:04d}-{timestamp[1]:02d}-{timestamp[2]:02d} " +
+        f"{timestamp[3]:02d}:{timestamp[4]:02d}:{timestamp[5]:02d}"
+    )
     log_message = f"{formatted_timestamp} [{level}]: {message}\n"
 
     print(log_message)
@@ -51,18 +54,19 @@ def connect_wifi(oled1=None, oled2=None, fd_oled1=None, fd_oled2=None):
 
     wlan = network.WLAN(network.STA_IF)
 
-    # Deactivate and then reactivate the WiFi interface for a complete reset
-    wlan.active(False)
-    utime.sleep(1)  # Wait a bit for the interface to deactivate
+    # # Deactivate and then reactivate the WiFi interface for a complete reset
+    # wlan.active(False)
+    # utime.sleep(1)  # Wait a bit for the interface to deactivate
+    # wlan.active(True)
+    # utime.sleep(1)  # Wait a bit for the interface to activate
+
+    # # Reset connection
+    # if is_wifi_connected():
+    #     disconnect_wifi()
+
     wlan.active(True)
-    utime.sleep(1)  # Wait a bit for the interface to activate
-
-    # Reset connection
-    if is_wifi_connected():
-        disconnect_wifi()
-
-    wlan.config(pm=wlan.PM_NONE)
-    wlan.config(txpower=18)
+    # wlan.config(pm=wlan.PM_NONE)
+    # wlan.config(txpower=18)
     # wlan.config(pm=0xa11140)
     wlan.connect(credentials.WIFI_SSID, credentials.WIFI_PASSWORD)
 

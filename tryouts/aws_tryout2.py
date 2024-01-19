@@ -1,10 +1,5 @@
-try:
-    from uhashlib import sha256 as _sha256
-except ImportError:
-    print("Warning: not using uhashlib")
-    from hashlib import sha256 as _sha256
-
-import hmac as _hmac
+import uhashlib as hashlib
+import hmac
 import utime
 import ubinascii as _ubinascii
 import credentials
@@ -32,15 +27,15 @@ def request_gen(
 
     key = bytearray()
     key.extend(("AWS4" + secret_key).encode())
-    print("key: ", key)
-    kDate = _hmac.new(key, date_stamp, _sha256).digest()
-    kRegion = _hmac.new(kDate, region, _sha256).digest()
-    kService = _hmac.new(kRegion, service, _sha256).digest()
-    kSigning = _hmac.new(kService, request_type, _sha256).digest()
+    print("Key: ", key)
+    kDate = hmac.new(key, date_stamp.encode('utf-8'), 'sha256').digest()
+    kRegion = hmac.new(kDate, region.encode('utf-8'), 'sha256').digest()
+    kService = hmac.new(kRegion, service.encode('utf-8'), 'sha256').digest()
+    kSigning = hmac.new(kService, request_type.encode('utf-8'), 'sha256').digest()
 
     content_length = str(len(body))
-    print(body)
-    payload_hash = _ubinascii.hexlify(_sha256(body.encode("utf-8")).digest()).decode(
+    print(f"Body: {body}\n")
+    payload_hash = _ubinascii.hexlify(hashlib.sha256(body.encode("utf-8")).digest()).decode(
         "utf-8"
     )
 
@@ -79,7 +74,7 @@ def request_gen(
 
 
     canonical_request_hash = _ubinascii.hexlify(
-        _sha256(canonical_request.encode("utf-8")).digest()
+        hashlib.sha256(canonical_request.encode("utf-8")).digest()
     ).decode("utf-8")
 
 
@@ -95,8 +90,8 @@ def request_gen(
     )
 
     # generate the signature:
-    signature = _hmac.new(kSigning, string_to_sign, _sha256).digest()
-    signatureHex = _ubinascii.hexlify(signature).decode("utf-8")
+    signature = hmac.new(kSigning, string_to_sign.encode('utf-8'), 'sha256').digest()
+    signature_hex = _ubinascii.hexlify(signature).decode("utf-8")
 
     authorization_header = (
         algorithm
@@ -110,7 +105,7 @@ def request_gen(
         + signed_headers
         + ", "
         + "Signature="
-        + signatureHex
+        + signature_hex
     )
 
     return_dict["headers"] = {
@@ -132,7 +127,7 @@ def main():
 
     # Get the current date and time in the format required by AWS
     now = utime.localtime()
-    date_time_stamp = "{:04d}{:02d}{:02d}T{:02d}{:02d}{:02d}Z".format(now[0], now[1], now[2], now[3], now[4], now[5])
+    date_time_stamp = f"{now[0]:04d}{now[1]:02d}{now[2]:02d}T{now[3]:02d}{now[4]:02d}{now[5]:02d}Z"
 
     # Call the request_gen function
     request_info = request_gen(access_key, secret_key, date_time_stamp)
@@ -143,14 +138,15 @@ def main():
     # Combine the host and URI to form the URL
     api_url = 'https://' + request_info['host'] + request_info['uri']
 
-    print('URL:', api_url)
-    print('Headers:', request_info['headers'])
+    print(f"Calling URL: {api_url}\n")
+    print(f"Headers: {request_info['headers']}\n")
 
     # Send the request
     response = urequests.get(api_url, headers=request_info['headers'])
 
     # Print the response
-    print(response.text)
+    print(f"Response status code: {response.status_code}")
+    print(f"Response: {response.text}\n")
 
 # Call the main function
 if __name__ == "__main__":

@@ -7,6 +7,8 @@ import utils
 import config
 import credentials
 from utils import log
+import aws_api
+import json
 
 class RailData:
     def __init__(self):
@@ -17,22 +19,39 @@ class RailData:
 
     async def fetch_data_from_api(self, max_retries=3):
         assert utils.is_wifi_connected(), "Wifi not connected"
-        api_url = f"{config.LDBWS_API_URL}/{config.STATION_CRS}?numRows={config.NUMBER_OF_SERVICES}"
-        request_headers = {"x-apikey": credentials.LDBWS_API_KEY}
+        rail_data_headers = {"x-apikey": credentials.RAILDATAORG_API_KEY}
 
         for i in range(max_retries):
             response = None
             try:
                 gc.collect()
-                response = requests.get(url=api_url, headers=request_headers, timeout=10)
+                if config.API_SOURCE == 'RailDataOrg':
+                    rail_data_url = (
+                        f"{config.RAILDATAORG_API_URL}/{config.STATION_CRS}" +
+                        f"?numRows={config.RAILDATAORG_NUMBER_OF_SERVICES}"
+                    )
+                    response = requests.get(url=rail_data_url, headers=rail_data_headers, timeout=10)
+                elif config.API_SOURCE == 'AWS':
+                    rail_data_headers = aws_api.create_signed_headers(
+                        api_host = config.AWS_API_HOST,
+                        api_uri = config.AWS_API_URI,
+                        region = config.AWS_API_REGION,
+                        service = config.AWS_API_SERVICE, 
+                        access_key = credentials.AWS_ACCESS_KEY,
+                        secret_key = credentials.AWS_SECRET_ACCESS_KEY,
+                        query_string = config.AWS_API_QUERYSTRING,
+                        additional_headers = rail_data_headers
+                    )
+
+                    response = requests.get(url=config.AWS_API_URL, headers=rail_data_headers, timeout=10)
 
                 if response is None:
                     log("No response from API", level='ERROR')
-                    raise OSError(debug_message)
+                    raise OSError("No response from API")
 
                 if response.status_code < 200 or response.status_code >= 300:
                     log(f"HTTP request failed, status code {response.status_code}", level='ERROR')
-                    raise OSError(debug_message)
+                    raise OSError("HTTP request failed, status code {response.status_code}")
                 
                 # Log the size of the response data in KB, rounded to 2 decimal places
                 log(f"API response: {round(len(response.content) / 1024, 2)} KB")
@@ -42,7 +61,7 @@ class RailData:
                 gc.collect()
                 return json_data
             except (OSError, ValueError, TypeError, MemoryError) as e:
-                log(f"Error with request to {api_url} on attempt {i+1}: {e}", level='ERROR')
+                log(f"Error with request to API on attempt {i+1}: {e}", level='ERROR')
                 if i < max_retries - 1:  # No delay after the last attempt
                     await asyncio.sleep(2 ** i)  # Exponential backoff
                 raise e # Re-raise the exception to stop the program.
@@ -59,7 +78,7 @@ class RailData:
             log(f"Error opening or reading file: {e}", level='ERROR')
             return None
         except ValueError as e:
-            log(f"Error parsing JSON data: {e}", level='ERROR')
+            log(f"Error parsing file JSON: {e}", level='ERROR')
             return None
 
     async def get_rail_data(self):
@@ -76,7 +95,9 @@ class RailData:
         else:
             response_JSON = await self.fetch_data_from_api()
 
-        self.parse_rail_data(response_JSON)
+        # print(f"\nresponse_JSON: {response_JSON}\n")  # Debug print
+
+        self.parse_raildataorg_rail_data(response_JSON)
         gc.collect()
 
         offline_status = 'OFFLINE' if config.offline_mode else 'ONLINE'
@@ -90,7 +111,7 @@ class RailData:
             level='DEBUG'
         )
 
-    def parse_service(self, service):
+    def parse_raildataorg_service(self, service):
         if not service:
             return None
 
@@ -107,11 +128,11 @@ class RailData:
             ]
         }
 
-    def parse_departures(self, train_services, platform_number):
+    def parse_raildataorg_departures(self, train_services, platform_number):
         if train_services is None:
             return []
         return [
-            self.parse_service(service) for i, service in enumerate(train_services) if service.get("platform") == platform_number
+            self.parse_raildataorg_service(service) for i, service in enumerate(train_services) if service.get("platform") == platform_number
         ][:2]
 
     def parse_nrcc_message(self, nrcc_messages):
@@ -119,22 +140,75 @@ class RailData:
             nrcc_message = nrcc_messages[0].get("Value", "")
             return re.sub('<.*?>', '', nrcc_message)
         return ""
+    
+    def parse_aws_service(self, service):
+        # Extract the necessary information from the service dictionary
+        destination = service.get('destination')
+        time_scheduled = service.get('time_scheduled')
+        time_estimated = service.get('time_estimated')
+        operator = service.get('operator')
 
-    def parse_rail_data(self, data_JSON):
+        # Extract the subsequent calling points
+        subsequent_calling_points = []
+        for scp in service.get('subsequentCallingPoints', []):
+            for cp in scp.get('callingPoint', []):
+                location_name = cp.get('locationName')
+                st = cp.get('st')
+                et = cp.get('et')
+                subsequent_calling_points.append((location_name, st, et))
+
+        # Return a tuple with the extracted information
+        return (destination, time_scheduled, time_estimated, operator, subsequent_calling_points)
+
+    def parse_aws_departures(self, train_services):
+        if train_services is None:
+            return []
+
+        # Parse each service in the train services list
+        return [self.parse_aws_service(service) for service in train_services]
+
+    def parse_AWS_rail_data(self, data_JSON):
         """
-        Parse the rail data to get the first two departures for the station and platform specified in config.py
+        Parse the rail data from AWS to get the first two departures for the station and platform specified in config.py
         Within the next 120 minutes (default/max)
         Plus any NRCC Travel Alert message.
         """
         try:
             if data_JSON:
+                # Check if "trainServices" key exists in the data
+                train_services = data_JSON if isinstance(data_JSON, list) else data_JSON.get("trainServices")
+                oled1_platform_number = config.OLED1_PLATFORM_NUMBER
+                oled2_platform_number = config.OLED2_PLATFORM_NUMBER
+                if train_services:
+                    # print(f"Train services: {json.dumps(train_services)}")  # Debug print
+                    self.oled1_departures = self.parse_aws_departures(train_services, oled1_platform_number)
+                    self.oled2_departures = self.parse_aws_departures(train_services, oled2_platform_number)
+
+                # Check if CUSTOM_TRAVEL_ALERT is defined in config.py
+                if getattr(config, 'CUSTOM_TRAVEL_ALERT', None) is not None: 
+                    self.nrcc_message = config.CUSTOM_TRAVEL_ALERT
+                else:
+                    self.nrcc_message = self.parse_nrcc_message(data_JSON.get("nrccMessages") if isinstance(data_JSON, dict) else None)
+        except Exception as e:
+            log(f"Error parsing rail JSON: {e}", level='ERROR')
+
+
+    def parse_raildataorg_rail_data(self, data_JSON):
+        """
+        Parse the rail data from RailDatOrg to get the first two departures for the station and platform specified in config.py
+        Within the next 120 minutes (default/max)
+        Plus any NRCC Travel Alert message.
+        """
+        try:
+            if data_JSON:
+                # Check if "trainServices" key exists in the data
                 train_services = data_JSON.get("trainServices")
                 oled1_platform_number = config.OLED1_PLATFORM_NUMBER
                 oled2_platform_number = config.OLED2_PLATFORM_NUMBER
                 if train_services:
-                    # print(f"All services: {train_services}")  # Debug print
-                    self.oled1_departures = self.parse_departures(train_services, oled1_platform_number)
-                    self.oled2_departures = self.parse_departures(train_services, oled2_platform_number)
+                    # print(f"Train services: {json.dumps(train_services)}")  # Debug print
+                    self.oled1_departures = self.parse_raildataorg_departures(train_services, oled1_platform_number)
+                    self.oled2_departures = self.parse_raildataorg_departures(train_services, oled2_platform_number)
 
                 # Check if CUSTOM_TRAVEL_ALERT is defined in config.py
                 if getattr(config, 'CUSTOM_TRAVEL_ALERT', None) is not None: 
@@ -142,13 +216,14 @@ class RailData:
                 else:
                     self.nrcc_message = self.parse_nrcc_message(data_JSON.get("nrccMessages"))
         except Exception as e:
-            log(f"Error occurred while parsing rail data: {e}", level='ERROR')
+            log(f"Error parsing rail JSON: {e}", level='ERROR')
 
 async def main():
     import ntptime
     utils.connect_wifi()
 
     log("\n\n[Program started]\n", level="INFO")
+    log(f"Using API: {config.API_SOURCE}", level="INFO")
 
     if utils.is_wifi_connected():
         ntptime.settime()

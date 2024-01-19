@@ -140,6 +140,7 @@ async def main():
         None 
     """
     log("\n\n[Program started]\n", level="INFO")
+    log(f"Using API: {config.API_SOURCE}", level="INFO")
     gc.threshold(gc.mem_free() // 4 + gc.mem_alloc()) # Set threshold for gc at 25% free memory
     gc.collect()
 
