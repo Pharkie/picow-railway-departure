@@ -36,6 +36,9 @@ LDBWS_API_URL = ( # National Rail API URL. On two lines for readability.
     "/1010-live-departure-board-dep/LDBWS/api/20220120/GetDepBoardWithDetails"
 )
 
+AWS_API_URL = "https://kmm1ogta93.execute-api.eu-west-2.amazonaws.com/prod/"
+AWS_REGION = "eu-west-2"
+
 # OLED screen params (SSD1306)
 LINEONE_Y = const(0)
 THIN_LINETWO_Y = const(11)

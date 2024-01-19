@@ -139,6 +139,7 @@ async def main():
     Returns:
         None 
     """
+    log("\n\n[Program started]\n", level="INFO")
     gc.threshold(gc.mem_free() // 4 + gc.mem_alloc()) # Set threshold for gc at 25% free memory
     gc.collect()
 
