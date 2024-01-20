@@ -18,10 +18,10 @@ def parse_url(url):
     return protocol, host, uri, query_string
 
 # Set to 'RailDataOrg' or 'AWS'. First uses LDWS API, second uses AWS API Gateway below.
-API_SOURCE = 'AWS'
-# API_SOURCE = 'AWS' # Comment out one or the other
+# API_SOURCE = 'RailDataOrg' # Comment out one or the other
+API_SOURCE = 'AWS' # Comment out one or the other
 
-STATION_CRS = "EUS"  # Station's CRS code
+STATION_CRS = "PMW"  # Station's CRS code
 
 # Number of services to request (0-10). 
 # The risk is that services for the requested platform(s) may not appear in the first X results.
