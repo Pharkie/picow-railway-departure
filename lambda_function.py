@@ -5,12 +5,25 @@ import json
 import requests
 
 def keep_keys_in_dict(dict_del, keys):
-    keys_to_delete = [key for key in dict_del if key not in keys and not any(k.startswith(key + '.') for k in keys)]
-    for key in keys_to_delete:
-        del dict_del[key]
-    for key, value in dict_del.items():
-        if isinstance(value, dict):
-            keep_keys_in_dict(value, [k.split('.', 1)[1] for k in keys if k.startswith(key + '.')])
+    keys_set = set(keys)
+    keys_with_subkeys = {k.split('.')[0] for k in keys if '.' in k}
+
+    for key in list(dict_del.keys()):
+        if key not in keys_set and key not in keys_with_subkeys:
+            del dict_del[key]
+        elif isinstance(dict_del[key], dict):
+            subkeys = [k.split('.', 1)[1] for k in keys if k.startswith(key + '.')]
+            keep_keys_in_dict(dict_del[key], subkeys)
+        elif isinstance(dict_del[key], list):
+            for item in dict_del[key]:
+                if isinstance(item, dict):
+                    subkeys = [k.split('.', 1)[1] for k in keys if k.startswith(key + '.')]
+                    keep_keys_in_dict(item, subkeys)
+                elif isinstance(item, list):
+                    for subitem in item:
+                        if isinstance(subitem, dict):
+                            subkeys = [k.split('.', 1)[1] for k in keys if k.startswith(key + '.')]
+                            keep_keys_in_dict(subitem, subkeys)
 
 def lambda_handler(event, context):
     # Get CRS code from path parameters
@@ -64,16 +77,16 @@ def lambda_handler(event, context):
         }
 
     # Filter services based on platform and only include specific fields
-    # Specify the fields to keep. Rest are deleted.
+    # Specify the fields to keep. Rest are deleted. Parents of subkeys specified are kept.
     keys_to_keep = [
         'platform', 
         'std', 
         'etd', 
         'operator', 
-        'subsequentCallingPoints.locationName', 
-        'subsequentCallingPoints.st', 
-        'subsequentCallingPoints.et', 
-        'destination'
+        'subsequentCallingPoints.callingPoint.locationName', 
+        'subsequentCallingPoints.callingPoint.st', 
+        'subsequentCallingPoints.callingPoint.et', 
+        'destination.locationName'
     ]
 
     filtered_services = []
