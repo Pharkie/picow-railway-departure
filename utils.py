@@ -75,17 +75,28 @@ def connect_wifi(oled1=None, oled2=None, fd_oled1=None, fd_oled2=None):
         if wlan.status() < 0 or wlan.status() >= 3:
             break
         log(f"Waiting for Wifi to connect {max_wait + 1 - waited}/{max_wait}")
-        display_utils.both_screen_text(oled1, oled2, fd_oled1, fd_oled2, "Connecting wifi", config.LINEONE_Y, f"{max_wait + 1 - waited}/{max_wait}", config.THIN_LINETWO_Y)
+        display_utils.both_screen_text(
+            oled1, oled2, fd_oled1, fd_oled2, 
+            "Connecting wifi", config.LINEONE_Y, 
+            f"{max_wait + 1 - waited}/{max_wait}", config.THIN_LINETWO_Y
+        )
         waited -= 1
         utime.sleep(1)
 
     if network.WLAN(network.STA_IF).isconnected():
         log("Wifi connected")
-        display_utils.both_screen_text(oled1, oled2, fd_oled1, fd_oled2, "Wifi connected", config.LINEONE_Y, ":)", config.THIN_LINETWO_Y)
+        display_utils.both_screen_text(
+            oled1, oled2, fd_oled1, fd_oled2, 
+            "Wifi connected", config.LINEONE_Y, ":)", config.THIN_LINETWO_Y
+        )
     else:
         log("Wifi not connected: timed out")
-        offline_mode = True
-        display_utils.both_screen_text(oled1, oled2, fd_oled1, fd_oled2, "No wifi :(", config.LINEONE_Y, "Switching to", config.THIN_LINETWO_Y, "offline mode", config.THIN_LINETHREE_Y)
+        display_utils.both_screen_text(
+            oled1, oled2, fd_oled1, fd_oled2, 
+            "Config = online", config.LINEONE_Y, 
+            "But no wifi :(", config.THIN_LINETWO_Y,
+            "Stopping.", config.THIN_LINETHREE_Y
+        )
 
     utime.sleep(1)
     # Clear screens after (but don't update display)

@@ -39,10 +39,6 @@ OFFLINE_MODE = False  # Comment out one or the other
 
 OFFLINE_JSON_FILE = "sample_data_big.json"  # File to use for offline mode
 
-# No idea if this works for Platform A etc (e.g. at PAD).
-OLED1_PLATFORM_NUMBER = "1"  # Platform number to show departures for. Note: string not an integer.
-OLED2_PLATFORM_NUMBER = "2"  # Platform number to show departures for. Note: string not an integer.
-
 # CUSTOM_TRAVEL_ALERT = "This is a 100 character long test travel alert for testing purposes. Please ignore. 12345"  # Set to None to disable
 
 # I2C pins for OLED screens
@@ -56,8 +52,13 @@ RAILDATAORG_API_URL = ( # National Rail API URL. On two lines for readability.
     "/1010-live-departure-board-dep/LDBWS/api/20220120/GetDepBoardWithDetails"
 )
 
-# My idea here is you specify the full API URL you want to call and the code will parse it into its components.
-AWS_PLATFORMS_TO_GET = "1,2"
+# No idea if this works for Platform A etc (e.g. at PAD).
+OLED1_PLATFORM_NUMBER = "1"  # Platform number to show departures for. Note: string not an integer.
+OLED2_PLATFORM_NUMBER = "2"  # Platform number to show departures for. Note: string not an integer.
+
+AWS_PLATFORMS_TO_GET = ",".join([OLED1_PLATFORM_NUMBER, OLED2_PLATFORM_NUMBER])
+
+# Specify the full API URL and the code will parse it into components.
 AWS_API_URL = f"https://kmm1ogta93.execute-api.eu-west-2.amazonaws.com/prod/{STATION_CRS}?platforms={AWS_PLATFORMS_TO_GET}"
 
 # Parse the URL into components
