@@ -8,7 +8,6 @@ import config
 import credentials
 from utils import log
 import aws_api
-import json
 
 class RailData:
     def __init__(self):
