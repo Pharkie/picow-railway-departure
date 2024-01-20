@@ -1,5 +1,5 @@
 import hmac
-import uhashlib as hashlib
+import hashlib
 import ubinascii
 import utime
 import urequests
@@ -127,13 +127,9 @@ def main():
         print(f"Request failed: {e}")
         return
 
-    print(response.text)
-
     response_json = json.loads(response.text)
 
-    print(json.dumps(response_json))
-
-    # Use this troubleshooting AWS. Get the message and any error from the response
+    # # Use this troubleshooting AWS. Get the message and any error from the response
     # message = response_json.get('message')
     # error = response_json.get('error')
 
@@ -145,6 +141,9 @@ def main():
     #     print(f"Message: {message}")
     # if error is not None:
     #     print(f"Error: {error}")
+
+    print(response.text)
+    # print(json.dumps(response_json))
 
 if __name__ == "__main__":
     main()
