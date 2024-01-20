@@ -3,8 +3,9 @@ from micropython import const
 from machine import Pin
 import re
 
+
 def parse_url(url):
-    pattern = '^(https?):\\/\\/([^\\/]+)\\/([^\\?]*)(\\?(.*))?'
+    pattern = "^(https?):\\/\\/([^\\/]+)\\/([^\\?]*)(\\?(.*))?"
     match = re.match(pattern, url)
 
     if match is None:
@@ -17,13 +18,14 @@ def parse_url(url):
 
     return protocol, host, uri, query_string
 
+
 # Set to 'RailDataOrg' or 'AWS'. First uses LDWS API, second uses AWS API Gateway below.
 # API_SOURCE = 'RailDataOrg' # Comment out one or the other
-API_SOURCE = 'AWS' # Comment out one or the other
+API_SOURCE = "AWS"  # Comment out one or the other
 
 STATION_CRS = "PMW"  # Station's CRS code
 
-# Number of services to request (0-10). 
+# Number of services to request (0-10).
 # The risk is that services for the requested platform(s) may not appear in the first X results.
 # With this API (and others I looked at) there's ** no way to ask for services only from a given platform **.
 # We want a small number (e.g. 4) for a large station (e.g. EUS), but could maybe afford a larger number for a small station.
@@ -47,14 +49,18 @@ OLED1_SDA_PIN = Pin(16)
 OLED2_SCL_PIN = Pin(19)
 OLED2_SDA_PIN = Pin(18)
 
-RAILDATAORG_API_URL = ( # National Rail API URL. On two lines for readability.
+RAILDATAORG_API_URL = (  # National Rail API URL. On two lines for readability.
     "https://api1.raildata.org.uk"
     "/1010-live-departure-board-dep/LDBWS/api/20220120/GetDepBoardWithDetails"
 )
 
 # No idea if this works for Platform A etc (e.g. at PAD).
-OLED1_PLATFORM_NUMBER = "1"  # Platform number to show departures for. Note: string not an integer.
-OLED2_PLATFORM_NUMBER = "2"  # Platform number to show departures for. Note: string not an integer.
+OLED1_PLATFORM_NUMBER = (
+    "1"  # Platform number to show departures for. Note: string not an integer.
+)
+OLED2_PLATFORM_NUMBER = (
+    "2"  # Platform number to show departures for. Note: string not an integer.
+)
 
 AWS_PLATFORMS_TO_GET = ",".join([OLED1_PLATFORM_NUMBER, OLED2_PLATFORM_NUMBER])
 
@@ -62,9 +68,11 @@ AWS_PLATFORMS_TO_GET = ",".join([OLED1_PLATFORM_NUMBER, OLED2_PLATFORM_NUMBER])
 AWS_API_URL = f"https://kmm1ogta93.execute-api.eu-west-2.amazonaws.com/prod/{STATION_CRS}?platforms={AWS_PLATFORMS_TO_GET}"
 
 # Parse the URL into components
-AWS_API_PROTOCOL, AWS_API_HOST, AWS_API_URI, AWS_API_QUERYSTRING = parse_url(AWS_API_URL)
+AWS_API_PROTOCOL, AWS_API_HOST, AWS_API_URI, AWS_API_QUERYSTRING = parse_url(
+    AWS_API_URL
+)
 
-host_parts = AWS_API_HOST.split('.')
+host_parts = AWS_API_HOST.split(".")
 AWS_API_ID = host_parts[0]
 AWS_API_SERVICE = host_parts[1]
 AWS_API_REGION = host_parts[2]

@@ -24,6 +24,7 @@ import config
 import utils
 from utils import log
 
+
 def initialize_oled(i2c, display_name):
     """
     This function initializes an OLED display.
@@ -41,7 +42,9 @@ def initialize_oled(i2c, display_name):
     try:
         devices = i2c.scan()
         if devices:
-            print(f"I2C found for {display_name}: {hex(i2c.scan()[0]).upper()}. Config: {str(i2c)}")
+            print(
+                f"I2C found for {display_name}: {hex(i2c.scan()[0]).upper()}. Config: {str(i2c)}"
+            )
         else:
             print(f"No I2C devices found on {display_name}.")
 
@@ -51,6 +54,7 @@ def initialize_oled(i2c, display_name):
     except Exception as e:
         print(f"Failed to initialize {display_name}. Error: {str(e)}")
         return None
+
 
 def setup_displays():
     """
@@ -73,6 +77,7 @@ def setup_displays():
 
     return setup_oled1, setup_oled2
 
+
 async def run_periodically(func, wait_seconds):
     """
     This coroutine runs a given function periodically at a given interval.
@@ -86,10 +91,14 @@ async def run_periodically(func, wait_seconds):
         try:
             await func()
         except Exception as e:
-            log(f"run_periodically() caught exception so exiting. Free memory: {gc.mem_free()}. Details: {e} ", level='ERROR')
+            log(
+                f"run_periodically() caught exception so exiting. Free memory: {gc.mem_free()}. Details: {e} ",
+                level="ERROR",
+            )
             raise  # re-raise the exception to stop the program
         await asyncio.sleep(wait_seconds)
-    
+
+
 async def cycle_oled(oled, fd_oled, rail_data_instance, screen_number):
     """
     This coroutine manages the display of departures and travel alerts on an OLED screen.
@@ -100,9 +109,9 @@ async def cycle_oled(oled, fd_oled, rail_data_instance, screen_number):
     rail_data_instance: An instance of the RailData class that provides the departure information.
     screen_number: The number of the screen (1 or 2).
 
-    The coroutine retrieves the departures for the specified screen from the rail_data_instance. 
-    If there are departures, it displays the first and, if available, the second departure. 
-    If there are no departures, it displays "No departures". 
+    The coroutine retrieves the departures for the specified screen from the rail_data_instance.
+    If there are departures, it displays the first and, if available, the second departure.
+    If there are no departures, it displays "No departures".
     If there is a travel alert, it displays the alert.
     """
     while True:
@@ -115,41 +124,48 @@ async def cycle_oled(oled, fd_oled, rail_data_instance, screen_number):
             await display_utils.display_first_departure(oled, fd_oled, departures[0])
 
             if len(departures) > 1:
-                await display_utils.display_second_departure(oled, fd_oled, departures[1])
+                await display_utils.display_second_departure(
+                    oled, fd_oled, departures[1]
+                )
         else:
             await display_utils.display_no_departures(oled, fd_oled)
 
         if rail_data_instance.nrcc_message:
-            await display_utils.display_travel_alert(oled, fd_oled, rail_data_instance.nrcc_message)
-            
+            await display_utils.display_travel_alert(
+                oled, fd_oled, rail_data_instance.nrcc_message
+            )
+
         await asyncio.sleep(3)
+
 
 async def main():
     """
     The main coroutine.
 
-    Sets up OLED displays, initializes rail data, and creates tasks to 
-    display the clock, update rail data, and cycle through rail data on 
-    the displays. If not in offline mode, it also connects to Wi-Fi and 
+    Sets up OLED displays, initializes rail data, and creates tasks to
+    display the clock, update rail data, and cycle through rail data on
+    the displays. If not in offline mode, it also connects to Wi-Fi and
     updates rail data every 60 seconds.
 
     Parameters:
         None
 
     Returns:
-        None 
+        None
     """
     log("\n\n[Program started]\n", level="INFO")
     log(f"Using API: {config.API_SOURCE}", level="INFO")
-    gc.threshold(gc.mem_free() // 4 + gc.mem_alloc()) # Set threshold for gc at 25% free memory
+    gc.threshold(
+        gc.mem_free() // 4 + gc.mem_alloc()
+    )  # Set threshold for gc at 25% free memory
     gc.collect()
 
     # print("main() called")
     oled1, oled2 = setup_displays()
 
     # dejav_m10.bin must be in the root directory
-    fd_oled1 = FontDrawer(frame_buffer=oled1, font_name = 'dejav_m10') 
-    fd_oled2 = FontDrawer(frame_buffer=oled2, font_name = 'dejav_m10')
+    fd_oled1 = FontDrawer(frame_buffer=oled1, font_name="dejav_m10")
+    fd_oled2 = FontDrawer(frame_buffer=oled2, font_name="dejav_m10")
 
     display_utils.display_init_message(oled1, oled2, fd_oled1, fd_oled2)
     utime.sleep(2)
@@ -169,7 +185,7 @@ async def main():
     asyncio.create_task(display_utils.display_clock(oled2, fd_oled2))
 
     # update_rail_data_task = asyncio.create_task(run_periodically(rail_data_instance.get_rail_data, 10)) # For testing
-    if not config.OFFLINE_MODE: 
+    if not config.OFFLINE_MODE:
         asyncio.create_task(run_periodically(rail_data_instance.get_rail_data, 60))
 
     asyncio.create_task(cycle_oled(oled1, fd_oled1, rail_data_instance, 1))
@@ -180,6 +196,7 @@ async def main():
         gc.collect()  # Fixes a memory leak someplace
         print(f"Main loop cycle. Free memory: {gc.mem_free()}")
         await asyncio.sleep(25)
+
 
 if __name__ == "__main__":
     asyncio.run(main())

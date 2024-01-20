@@ -1,5 +1,6 @@
 # Implements the hmac module from the Python standard library.
 
+
 class HMAC:
     def __init__(self, key, msg=None, digestmod=None):
         if not isinstance(key, (bytes, bytearray)):
@@ -17,7 +18,9 @@ class HMAC:
         elif isinstance(digestmod, str):
             # A hash name suitable for hashlib.new().
             # make_hash = lambda d=b"": hashlib.new(digestmod, d)  # this way does not work with hashlib on micropython
-            make_hash = lambda d=b"": getattr(hashlib, digestmod)(d) # this way works with hashlib on micropython
+            make_hash = lambda d=b"": getattr(hashlib, digestmod)(
+                d
+            )  # this way works with hashlib on micropython
         else:
             # A module supporting PEP 247.
             make_hash = digestmod.new  # C
