@@ -4,6 +4,14 @@
 import json
 import requests
 
+def keep_keys_in_dict(dict_del, keys):
+    keys_to_delete = [key for key in dict_del if key not in keys and not any(k.startswith(key + '.') for k in keys)]
+    for key in keys_to_delete:
+        del dict_del[key]
+    for key, value in dict_del.items():
+        if isinstance(value, dict):
+            keep_keys_in_dict(value, [k.split('.', 1)[1] for k in keys if k.startswith(key + '.')])
+
 def lambda_handler(event, context):
     # Get CRS code from path parameters
     crs_code = event.get('pathParameters', {}).get('CRS')
@@ -56,18 +64,23 @@ def lambda_handler(event, context):
         }
 
     # Filter services based on platform and only include specific fields
-    filtered_services = [
-        {
-            "destination": service.get("destination", [{}])[0].get("locationName"),
-            "platform": service.get("platform"),
-            "time_scheduled": service.get("std"),
-            "time_estimated": service.get("etd"),
-            "operator": service.get("operator"),
-            "subsequentCallingPoints": service.get("subsequentCallingPoints")
-        }
-        for service in data.get('trainServices', [])
-        if platform_numbers is None or (service.get('platform') and service.get('platform') in platform_numbers)
+    # Specify the fields to keep. Rest are deleted.
+    keys_to_keep = [
+        'platform', 
+        'std', 
+        'etd', 
+        'operator', 
+        'subsequentCallingPoints.locationName', 
+        'subsequentCallingPoints.st', 
+        'subsequentCallingPoints.et', 
+        'destination'
     ]
+
+    filtered_services = []
+    for service in data.get('trainServices', []):
+        if platform_numbers is None or (service.get('platform') and service.get('platform') in platform_numbers):
+            keep_keys_in_dict(service, keys_to_keep)
+            filtered_services.append(service)
     
     # Limit to the first two services for each platform
     platform_services = {}
@@ -81,8 +94,8 @@ def lambda_handler(event, context):
     # Flatten the dictionary to a list
     filtered_services = [service for services in platform_services.values() for service in services]
     
-    # Return the filtered data
+    # Return the filtered data inside the trinaServices key
     return {
         'statusCode': 200,
-        'body': json.dumps(filtered_services)
+        'body': json.dumps({'trainServices': filtered_services})
     }

@@ -249,13 +249,13 @@ async def display_clock(oled, fd_oled):
         # Clear where the time is displayed without clearing whole line to save time (?)
         oled.fill_rect(40, config.THIN_LINETHREE_Y, 80, config.THIN_LINE_HEIGHT, 0)
 
-        if config.offline_mode and counter <= 2:
+        if config.OFFLINE_MODE and counter <= 2:
             fd_oled.print_str(offline_string, 40, config.THIN_LINETHREE_Y)
         else:
             clock_string = time_format.format(current_time[3], current_time[4], current_time[5])
             fd_oled.print_str(clock_string, 46, config.THIN_LINETHREE_Y) # Hardcoded x to save calcs
 
-        if config.offline_mode:
+        if config.OFFLINE_MODE:
             counter += 1
             if counter == 15:
                 counter = 0

@@ -19,6 +19,7 @@ def parse_url(url):
 
 # Set to 'RailDataOrg' or 'AWS'. First uses LDWS API, second uses AWS API Gateway below.
 API_SOURCE = 'AWS'
+# API_SOURCE = 'AWS' # Comment out one or the other
 
 STATION_CRS = "PMW"  # Station's CRS code
 
@@ -33,8 +34,8 @@ STATION_CRS = "PMW"  # Station's CRS code
 # return a filtered response via the Amazon API Gateway.
 RAILDATAORG_NUMBER_OF_SERVICES = const(6)
 
-# offline_mode = True  # Set to True to use sample_data.json instead of the live API.
-offline_mode = False  # Comment out one or the other
+# OFFLINE_MODE = True  # Set to True to use sample_data.json instead of the live API.
+OFFLINE_MODE = False  # Comment out one or the other
 
 OFFLINE_JSON_FILE = "sample_data_big.json"  # File to use for offline mode
 

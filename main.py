@@ -156,7 +156,7 @@ async def main():
     display_utils.clear_display(oled1)
     display_utils.clear_display(oled2)
 
-    if not config.offline_mode:
+    if not config.OFFLINE_MODE:
         utils.connect_wifi(oled1, oled2, fd_oled1, fd_oled2)
 
     rail_data_instance = rail_data.RailData()
@@ -169,7 +169,7 @@ async def main():
     asyncio.create_task(display_utils.display_clock(oled2, fd_oled2))
 
     # update_rail_data_task = asyncio.create_task(run_periodically(rail_data_instance.get_rail_data, 10)) # For testing
-    if not config.offline_mode: 
+    if not config.OFFLINE_MODE: 
         asyncio.create_task(run_periodically(rail_data_instance.get_rail_data, 60))
 
     asyncio.create_task(cycle_oled(oled1, fd_oled1, rail_data_instance, 1))

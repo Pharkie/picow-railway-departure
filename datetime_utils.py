@@ -13,7 +13,7 @@ import uasyncio as asyncio # type: ignore
 import utils
 import machine # type: ignore
 import random
-from config import offline_mode
+from config import OFFLINE_MODE
 
 def format_date(dt):
     # Format the date as 'DD MMM YYYY'.
@@ -74,7 +74,7 @@ def get_time_values(current_time_tuple=None):
 
 async def sync_rtc():
     # Sync RTC to NTP, then add an hour if it's DST and update the RTC
-    if offline_mode:
+    if OFFLINE_MODE:
         # Generate random values for hours, minutes, and seconds
         hours = random.randint(0, 23)
         minutes = random.randint(0, 59)

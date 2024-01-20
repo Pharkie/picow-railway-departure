@@ -90,17 +90,17 @@ class RailData:
 
         response_JSON = None
 
-        if config.offline_mode:
+        if config.OFFLINE_MODE:
             response_JSON = self.fetch_data_from_file()
         else:
             response_JSON = await self.fetch_data_from_api()
 
         # print(f"\nresponse_JSON: {response_JSON}\n")  # Debug print
 
-        self.parse_raildataorg_rail_data(response_JSON)
+        self.parse_rail_data(response_JSON)
         gc.collect()
 
-        offline_status = 'OFFLINE' if config.offline_mode else 'ONLINE'
+        offline_status = 'OFFLINE' if config.OFFLINE_MODE else 'ONLINE'
         get_departure = lambda d: f"{d['destination']} ({d['time_scheduled']})"
         oled1_summary = 'No departures' if not self.oled1_departures else ' and '.join(get_departure(d) for d in self.oled1_departures[:2])
         oled2_summary = 'No departures' if not self.oled2_departures else ' and '.join(get_departure(d) for d in self.oled2_departures[:2])
@@ -111,28 +111,39 @@ class RailData:
             level='DEBUG'
         )
 
-    def parse_raildataorg_service(self, service):
+    def parse_service(self, service):
         if not service:
             return None
 
+        subsequentCallingPoints = [
+            (
+                calling_point.get('locationName'), 
+                calling_point.get('et') if calling_point.get('et') != 'On time' else calling_point.get('st')
+            ) 
+            for subsequent_calling_point in service.get('subsequentCallingPoints', []) 
+            for calling_point in subsequent_calling_point.get('callingPoint', [])
+        ]
+
         return {
             "destination": service.get("destination", [{}])[0].get("locationName"),
-            "time_scheduled": service.get("std"),
-            "time_estimated": service.get("etd"),
-            "operator": service.get("operator"),
-            "subsequentCallingPoints": [
-                (
-                    calling_point.get("locationName"),
-                    calling_point.get("et") if calling_point.get("et") != "On time" else calling_point.get("st"),
-                ) for calling_point in service.get("subsequentCallingPoints", [{}])[0].get("callingPoint", [])
-            ]
+            "time_scheduled": service.get('std'),
+            "time_estimated": service.get('etd'),
+            "operator": service.get('operator'),
+            "subsequentCallingPoints": subsequentCallingPoints
         }
 
-    def parse_raildataorg_departures(self, train_services, platform_number):
+    def parse_departures(self, train_services, platform_number):
         if train_services is None:
             return []
+
+        if platform_number is None:
+            raise ValueError("platform_number is required")
+
+        # Parse each service in the train services list
         return [
-            self.parse_raildataorg_service(service) for i, service in enumerate(train_services) if service.get("platform") == platform_number
+            self.parse_service(service) 
+            for service in train_services 
+            if service.get('platform') == platform_number
         ][:2]
 
     def parse_nrcc_message(self, nrcc_messages):
@@ -141,61 +152,9 @@ class RailData:
             return re.sub('<.*?>', '', nrcc_message)
         return ""
     
-    def parse_aws_service(self, service):
-        # Extract the necessary information from the service dictionary
-        destination = service.get('destination')
-        time_scheduled = service.get('time_scheduled')
-        time_estimated = service.get('time_estimated')
-        operator = service.get('operator')
-
-        # Extract the subsequent calling points
-        subsequent_calling_points = []
-        for scp in service.get('subsequentCallingPoints', []):
-            for cp in scp.get('callingPoint', []):
-                location_name = cp.get('locationName')
-                st = cp.get('st')
-                et = cp.get('et')
-                subsequent_calling_points.append((location_name, st, et))
-
-        # Return a tuple with the extracted information
-        return (destination, time_scheduled, time_estimated, operator, subsequent_calling_points)
-
-    def parse_aws_departures(self, train_services):
-        if train_services is None:
-            return []
-
-        # Parse each service in the train services list
-        return [self.parse_aws_service(service) for service in train_services]
-
-    def parse_AWS_rail_data(self, data_JSON):
+    def parse_rail_data(self, data_JSON):
         """
-        Parse the rail data from AWS to get the first two departures for the station and platform specified in config.py
-        Within the next 120 minutes (default/max)
-        Plus any NRCC Travel Alert message.
-        """
-        try:
-            if data_JSON:
-                # Check if "trainServices" key exists in the data
-                train_services = data_JSON if isinstance(data_JSON, list) else data_JSON.get("trainServices")
-                oled1_platform_number = config.OLED1_PLATFORM_NUMBER
-                oled2_platform_number = config.OLED2_PLATFORM_NUMBER
-                if train_services:
-                    # print(f"Train services: {json.dumps(train_services)}")  # Debug print
-                    self.oled1_departures = self.parse_aws_departures(train_services, oled1_platform_number)
-                    self.oled2_departures = self.parse_aws_departures(train_services, oled2_platform_number)
-
-                # Check if CUSTOM_TRAVEL_ALERT is defined in config.py
-                if getattr(config, 'CUSTOM_TRAVEL_ALERT', None) is not None: 
-                    self.nrcc_message = config.CUSTOM_TRAVEL_ALERT
-                else:
-                    self.nrcc_message = self.parse_nrcc_message(data_JSON.get("nrccMessages") if isinstance(data_JSON, dict) else None)
-        except Exception as e:
-            log(f"Error parsing rail JSON: {e}", level='ERROR')
-
-
-    def parse_raildataorg_rail_data(self, data_JSON):
-        """
-        Parse the rail data from RailDatOrg to get the first two departures for the station and platform specified in config.py
+        Parse the rail data to get the first two departures for the station and platform specified in config.py
         Within the next 120 minutes (default/max)
         Plus any NRCC Travel Alert message.
         """
@@ -207,8 +166,8 @@ class RailData:
                 oled2_platform_number = config.OLED2_PLATFORM_NUMBER
                 if train_services:
                     # print(f"Train services: {json.dumps(train_services)}")  # Debug print
-                    self.oled1_departures = self.parse_raildataorg_departures(train_services, oled1_platform_number)
-                    self.oled2_departures = self.parse_raildataorg_departures(train_services, oled2_platform_number)
+                    self.oled1_departures = self.parse_departures(train_services, oled1_platform_number)
+                    self.oled2_departures = self.parse_departures(train_services, oled2_platform_number)
 
                 # Check if CUSTOM_TRAVEL_ALERT is defined in config.py
                 if getattr(config, 'CUSTOM_TRAVEL_ALERT', None) is not None: 
