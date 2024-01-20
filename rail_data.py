@@ -45,7 +45,7 @@ class RailData:
 
                     response = requests.get(url=config.AWS_API_URL, headers=rail_data_headers, timeout=10)
 
-                if response is None:
+                if not response:
                     log("No response from API", level='ERROR')
                     raise OSError("No response from API")
 
@@ -78,7 +78,7 @@ class RailData:
             log(f"Error opening or reading file: {e}", level='ERROR')
             return None
         except ValueError as e:
-            log(f"Error parsing file JSON: {e}", level='ERROR')
+            log(f"Error loading file JSON: {e}", level='ERROR')
             return None
 
     async def get_rail_data(self):
@@ -113,7 +113,7 @@ class RailData:
 
     def parse_service(self, service):
         if not service:
-            return None
+            raise ValueError("service is required")
 
         subsequentCallingPoints = [
             (
@@ -133,10 +133,24 @@ class RailData:
         }
 
     def parse_departures(self, train_services, platform_number):
-        if train_services is None:
-            return []
+        """
+        Parses the departures from the provided train services data for a specific platform.
 
-        if platform_number is None:
+        Iterates over the train services data and extracts relevant
+        information about the departures that are departing from the platform specified by 
+        the platform_number.
+
+        Args:
+            train_services (list): A list of dictionaries, each representing a train service.
+            platform_number (str): The platform number to filter the departures by.
+
+        Returns:
+            list: A list of dictionaries, each representing a parsed train service departing from the specified platform.
+        """
+        if not train_services:
+            raise ValueError("train_services is required")
+
+        if not platform_number:
             raise ValueError("platform_number is required")
 
         # Parse each service in the train services list
@@ -146,7 +160,16 @@ class RailData:
             if service.get('platform') == platform_number
         ][:2]
 
-    def parse_nrcc_message(self, nrcc_messages):
+    def parse_nrcc_message(self, nrcc_messages=None):
+        """
+        Parses the NRCC messages from the provided data.
+
+        Args:
+            nrcc_messages (list): A list of dictionaries, each representing an NRCC message.
+
+        Returns:
+            str: A string representing the parsed NRCC message.
+        """
         if nrcc_messages:
             nrcc_message = nrcc_messages[0].get("Value", "")
             return re.sub('<.*?>', '', nrcc_message)
@@ -160,22 +183,21 @@ class RailData:
         """
         try:
             if data_JSON:
-                # Check if "trainServices" key exists in the data
                 train_services = data_JSON.get("trainServices")
-                oled1_platform_number = config.OLED1_PLATFORM_NUMBER
-                oled2_platform_number = config.OLED2_PLATFORM_NUMBER
+
                 if train_services:
                     # print(f"Train services: {json.dumps(train_services)}")  # Debug print
-                    self.oled1_departures = self.parse_departures(train_services, oled1_platform_number)
-                    self.oled2_departures = self.parse_departures(train_services, oled2_platform_number)
+                    self.oled1_departures = self.parse_departures(train_services, config.OLED1_PLATFORM_NUMBER)
+                    self.oled2_departures = self.parse_departures(train_services, config.OLED2_PLATFORM_NUMBER)
 
                 # Check if CUSTOM_TRAVEL_ALERT is defined in config.py
-                if getattr(config, 'CUSTOM_TRAVEL_ALERT', None) is not None: 
+                if getattr(config, 'CUSTOM_TRAVEL_ALERT', None): 
                     self.nrcc_message = config.CUSTOM_TRAVEL_ALERT
                 else:
-                    self.nrcc_message = self.parse_nrcc_message(data_JSON.get("nrccMessages"))
+                    if data_JSON.get("nrccMessages"):
+                        self.nrcc_message = self.parse_nrcc_message(data_JSON.get("nrccMessages"))
         except Exception as e:
-            log(f"Error parsing rail JSON: {e}", level='ERROR')
+            log(f"Error parsing rail data JSON: {e}", level='ERROR')
 
 async def main():
     import ntptime

@@ -30,7 +30,7 @@ def log(message, level='INFO'):
     try:
         if os.stat(log_filename)[6] > max_log_size:
             # If the log file is too big, rotate it
-            print(f"Rotating log file {log_filename}. Max log size: {max_log_size} bytes, max log files: {max_log_files}")
+            log(f"Rotating log file {log_filename}. Max log size: {max_log_size} bytes, max log files: {max_log_files}")
 
             try:
                 os.remove(f"{log_filename}.{max_log_files}")
@@ -49,7 +49,7 @@ def log(message, level='INFO'):
         log_file.write(log_message)
 
 def connect_wifi(oled1=None, oled2=None, fd_oled1=None, fd_oled2=None):
-    # print("connect_wifi() called")
+    # log("connect_wifi() called")
     global offline_mode
 
     wlan = network.WLAN(network.STA_IF)
@@ -74,16 +74,16 @@ def connect_wifi(oled1=None, oled2=None, fd_oled1=None, fd_oled2=None):
     while waited > 0:
         if wlan.status() < 0 or wlan.status() >= 3:
             break
-        print(f"Waiting for Wifi to connect {max_wait + 1 - waited}/{max_wait}")
+        log(f"Waiting for Wifi to connect {max_wait + 1 - waited}/{max_wait}")
         display_utils.both_screen_text(oled1, oled2, fd_oled1, fd_oled2, "Connecting wifi", config.LINEONE_Y, f"{max_wait + 1 - waited}/{max_wait}", config.THIN_LINETWO_Y)
         waited -= 1
         utime.sleep(1)
 
     if network.WLAN(network.STA_IF).isconnected():
-        print("Wifi connected")
+        log("Wifi connected")
         display_utils.both_screen_text(oled1, oled2, fd_oled1, fd_oled2, "Wifi connected", config.LINEONE_Y, ":)", config.THIN_LINETWO_Y)
     else:
-        print("Wifi not connected: timed out")
+        log("Wifi not connected: timed out")
         offline_mode = True
         display_utils.both_screen_text(oled1, oled2, fd_oled1, fd_oled2, "No wifi :(", config.LINEONE_Y, "Switching to", config.THIN_LINETWO_Y, "offline mode", config.THIN_LINETHREE_Y)
 
@@ -96,11 +96,11 @@ def connect_wifi(oled1=None, oled2=None, fd_oled1=None, fd_oled2=None):
 
 def is_wifi_connected():
     is_it = network.WLAN(network.STA_IF).isconnected()
-    # print(f"is_wifi_connected() called and returns {is_it}")
+    # log(f"is_wifi_connected() called and returns {is_it}")
     return is_it
 
 def disconnect_wifi():
-    # print("disconnect_wifi() called")
+    # log("disconnect_wifi() called")
     wlan = network.WLAN(network.STA_IF)
     wlan.disconnect()
     wlan.active(False)

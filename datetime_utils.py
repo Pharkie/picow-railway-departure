@@ -79,7 +79,7 @@ async def sync_rtc():
         hours = random.randint(0, 23)
         minutes = random.randint(0, 59)
         seconds = random.randint(0, 59)
-        print(f"Offline mode: setting a random time {hours:02d}:{minutes:02d}:{seconds:02d}")
+        utils.log(f"Offline mode: setting a random time {hours:02d}:{minutes:02d}:{seconds:02d}")
         rtc = machine.RTC()
         # Set the RTC to the random time
         rtc.datetime((2023, 1, 1, 0, hours, minutes, seconds, 0))
@@ -101,6 +101,6 @@ async def sync_rtc():
             rtc = machine.RTC()
             # rtc.datetime() param is a different format of tuple to utime.localtime() so below converts it
             rtc.datetime((utime.localtime(current_timestamp)[0], utime.localtime(current_timestamp)[1], utime.localtime(current_timestamp)[2], utime.localtime(current_timestamp)[6], utime.localtime(current_timestamp)[3], utime.localtime(current_timestamp)[4], utime.localtime(current_timestamp)[5], 0))
-            print(f"RTC time set from NTP with DST: {is_DST_flag} ")
+            utils.log(f"RTC time set from NTP with DST: {is_DST_flag}\n")
         except Exception as e:
-            print(f"Failed to set RTC from NTP: {e}")
+            utils.log(f"Failed to set RTC from NTP: {e}")
