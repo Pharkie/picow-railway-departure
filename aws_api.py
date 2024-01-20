@@ -1,8 +1,8 @@
 import hmac
-import urequests
 import uhashlib as hashlib
 import ubinascii
 import utime
+import urequests
 import json
 import config
 import credentials
@@ -21,17 +21,17 @@ def create_signed_headers(
     service,
     access_key,
     secret_key,
-    query_string = '',
-    additional_headers = None
+    http_method='GET',
+    query_string='',
+    additional_headers=None,
+    payload=''
 ):
-    # Rest of the function...
     # Create a date for headers and the credential string
     t = utime.gmtime()
     amz_date = f"{t[0]:04d}{t[1]:02d}{t[2]:02d}T{t[3]:02d}{t[4]:02d}{t[5]:02d}Z"
     date_stamp = f"{t[0]:04d}{t[1]:02d}{t[2]:02d}"
 
     # Prepare canonical request
-    method = 'GET'
     canonical_querystring = query_string
     canonical_headers = 'host:' + api_host + '\n' + 'x-amz-date:' + amz_date + '\n'
     signed_headers = 'host;x-amz-date'
@@ -41,7 +41,7 @@ def create_signed_headers(
     # print(f"\npayload_hash: {payload_hash}\n")
     
     canonical_request = (
-        method + '\n' + api_uri + '\n' + canonical_querystring + '\n' +
+        http_method + '\n' + api_uri + '\n' + canonical_querystring + '\n' +
         canonical_headers + '\n' + signed_headers + '\n' + payload_hash
     )
 
@@ -67,14 +67,14 @@ def create_signed_headers(
 
     # Prepare headers
     headers = {'x-amz-date':amz_date, 'Authorization':authorization_header}
-    # Add additional headers if provided
+    
     if additional_headers is not None:
         headers.update(additional_headers)
 
     # print("================================")
     # print("Canonical Request")
     # print("================================")
-    # print(method) # HTTPRequestMethod
+    # print(http_method) # HTTPRequestMethod
     # print(api_uri) # CanonicalURI
     # print(canonical_querystring) # CanonicalQueryString
     # print(canonical_headers) # CanonicalHeaders
@@ -88,25 +88,44 @@ def create_signed_headers(
     return headers
 
 def sign(key, msg):
-    if isinstance(key, str):
-        key = key.encode('utf-8')  # Encode the key to bytes if it's a string
     return hmac.new(key, msg.encode("utf-8"), digestmod='sha256').digest()
 
 def main():
     additional_headers = {'x-apikey': credentials.RAILDATAORG_API_KEY}
+    payload = ""
+    http_method = "GET"
 
     headers = create_signed_headers(
-        api_host = config.AWS_API_HOST,
-        api_uri = config.AWS_API_URI,
-        region = config.AWS_API_REGION,
-        service = config.AWS_API_SERVICE, 
-        access_key = credentials.AWS_ACCESS_KEY,
-        secret_key = credentials.AWS_SECRET_ACCESS_KEY,
-        query_string = config.AWS_API_QUERYSTRING,
-        additional_headers = additional_headers
+        api_host=config.AWS_API_HOST,
+        api_uri=config.AWS_API_URI,
+        region=config.AWS_API_REGION,
+        service=config.AWS_API_SERVICE, 
+        access_key=credentials.AWS_ACCESS_KEY,
+        secret_key=credentials.AWS_SECRET_ACCESS_KEY,
+        query_string=config.AWS_API_QUERYSTRING,
+        additional_headers=additional_headers,
+        http_method=http_method,
+        payload=payload
     )
 
-    response = urequests.get(config.AWS_API_URL, headers=headers)
+    try:
+        if http_method == 'GET':
+            response = urequests.get(config.AWS_API_URL, headers=headers)
+        elif http_method == 'POST':
+            response = urequests.post(config.AWS_API_URL, headers=headers, data=payload)
+        elif http_method == 'PUT':
+            response = urequests.put(config.AWS_API_URL, headers=headers, data=payload)
+        elif http_method == 'DELETE':
+            response = urequests.delete(config.AWS_API_URL, headers=headers)
+        else:
+            raise ValueError(f"Unsupported HTTP method: {http_method}")
+        
+        if response.status_code < 200 or response.status_code >= 400:
+            print(f"Request failed with status code {response.status_code}")
+            return
+    except Exception as e:
+        print(f"Request failed: {e}")
+        return
 
     print(response.text)
 
