@@ -167,8 +167,12 @@ async def main():
     """
     set_global_exception()  # Debug aid
 
-    log_message("\n\n[Program started]\n", level="INFO")
-    log_message(f"Using API: {config.API_SOURCE}", level="INFO")
+    log_message(
+        f"\n\n[Program started] {'OFFLINE' if config.OFFLINE_MODE else 'ONLINE'} mode.\n",
+        level="INFO",
+    )
+    if not config.OFFLINE_MODE:
+        log_message(f"Using API: {config.API_SOURCE}", level="INFO")
     gc.threshold(
         gc.mem_free() // 4 + gc.mem_alloc()
     )  # Set threshold for gc at 25% free memory
@@ -211,7 +215,7 @@ async def main():
         loop_counter += 1
         gc.collect()
         log_message(f"Main loop cycle {loop_counter}. Free memory: {gc.mem_free()}")
-        await asyncio.sleep(30)
+        await asyncio.sleep(45)
 
 
 if __name__ == "__main__":
