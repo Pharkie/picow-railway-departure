@@ -209,9 +209,9 @@ async def main():
     loop_counter = 0
     while True:
         loop_counter += 1
-        gc.collect()  # Fixes a memory leak someplace
+        gc.collect()
         log_message(f"Main loop cycle {loop_counter}. Free memory: {gc.mem_free()}")
-        await asyncio.sleep(25)
+        await asyncio.sleep(30)
 
 
 if __name__ == "__main__":

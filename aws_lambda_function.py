@@ -77,13 +77,16 @@ def lambda_handler(event, context):
     # Fetch rail data
     MAX_RETRIES = 3
     DELAY_BETWEEN_RETRIES = 0.2  # Delay in seconds
+    data = None
 
+    # Typical API response time is 0.5 seconds, so 2 seconds should be enough to allow for retries
+    # Increase timeout on Lambda function (8s?). Default 3s means may timeout before the second attempt.
     for i in range(MAX_RETRIES):
         try:
             print(
                 f"[AWS] Starting attempt {i+1} of {MAX_RETRIES} to fetch rail data from RailData API."
             )
-            response = requests.get(LDBWS_API_URL, headers=request_headers)
+            response = requests.get(LDBWS_API_URL, headers=request_headers, timeout=2)
             response.raise_for_status()  # Raise an exception if the response contains an HTTP error status code
             data = response.json()
             print(f"[AWS] Success: got RailData JSON back on attempt {i+1}.")
@@ -118,9 +121,9 @@ def lambda_handler(event, context):
         "destination.locationName",
     ]
 
-    print(
-        "[AWS] Filtering services based on platform and only including specific fields."
-    )
+    # print(
+    #     "[AWS] Filtering services based on platform and only including specific fields."
+    # )
     filtered_services = []
     for service in data.get("trainServices", []):
         if platform_numbers is None or (
@@ -128,7 +131,7 @@ def lambda_handler(event, context):
         ):
             keep_keys_in_dict(service, keys_to_keep)
             filtered_services.append(service)
-    print(f"[AWS] Success: filtered services.")
+    # print("[AWS] Success: filtered services.")
 
     # Limit to the first two services for each platform
     platform_services = {}
@@ -140,12 +143,12 @@ def lambda_handler(event, context):
             platform_services[platform].append(service)
 
     # Flatten the dictionary to a list
-    print("[AWS] Flattening the dictionary to a list.")
+    # print("[AWS] Flattening the dictionary to a list.")
     filtered_services = [
         service for services in platform_services.values() for service in services
     ]
 
-    print(f"[AWS] Final list of services to send as response: {filtered_services}")
+    # print(f"[AWS] Final list of services to send as response: {filtered_services}")
 
     # Return the filtered data inside the trinaServices key
     return {"statusCode": 200, "body": json.dumps({"trainServices": filtered_services})}
