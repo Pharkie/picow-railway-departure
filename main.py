@@ -11,6 +11,8 @@ License: GNU General Public License (GPL)
 Known issues: doesn't handle DST change while device is running, since only checks at startup.
 
 """
+import asyncio
+import sys
 from machine import I2C
 import uasyncio as asyncio
 import utime
@@ -22,7 +24,17 @@ from lib.fdrawer import FontDrawer
 import display_utils
 import config
 import utils
-from utils import log
+from utils import log_message
+
+
+def set_global_exception():
+    def handle_exception(loop, context):
+        log_message(f"Caught global exception: {context['message']}")
+        log_message(str(context["exception"]))
+        sys.exit()
+
+    loop = asyncio.get_event_loop()
+    loop.set_exception_handler(handle_exception)
 
 
 def initialize_oled(i2c, display_name):
@@ -42,17 +54,17 @@ def initialize_oled(i2c, display_name):
     try:
         devices = i2c.scan()
         if devices:
-            print(
+            log_message(
                 f"I2C found for {display_name}: {hex(i2c.scan()[0]).upper()}. Config: {str(i2c)}"
             )
         else:
-            print(f"No I2C devices found on {display_name}.")
+            log_message(f"No I2C devices found on {display_name}.")
 
         oled = SSD1306_I2C(config.DISPLAY_WIDTH, config.DISPLAY_HEIGHT, i2c)
 
         return oled
     except Exception as e:
-        print(f"Failed to initialize {display_name}. Error: {str(e)}")
+        log_message(f"Failed to initialize {display_name}. Error: {str(e)}")
         return None
 
 
@@ -73,7 +85,7 @@ def setup_displays():
     setup_oled2 = initialize_oled(i2c_oled2, "oled2")
 
     if setup_oled2 is None:
-        print("No oled2. Skipping operations on second screen.")
+        log_message("No oled2. Skipping operations on second screen.")
 
     return setup_oled1, setup_oled2
 
@@ -91,11 +103,11 @@ async def run_periodically(func, wait_seconds):
         try:
             await func()
         except Exception as e:
-            log(
+            log_message(
                 f"run_periodically() caught exception so exiting. Free memory: {gc.mem_free()}. Details: {e} ",
                 level="ERROR",
             )
-            raise  # re-raise the exception to stop the program
+            raise  # Re-raise the exception (with traceback)to stop the program.
         await asyncio.sleep(wait_seconds)
 
 
@@ -153,14 +165,16 @@ async def main():
     Returns:
         None
     """
-    log("\n\n[Program started]\n", level="INFO")
-    log(f"Using API: {config.API_SOURCE}", level="INFO")
+    set_global_exception()  # Debug aid
+
+    log_message("\n\n[Program started]\n", level="INFO")
+    log_message(f"Using API: {config.API_SOURCE}", level="INFO")
     gc.threshold(
         gc.mem_free() // 4 + gc.mem_alloc()
     )  # Set threshold for gc at 25% free memory
     gc.collect()
 
-    # print("main() called")
+    # log("main() called")
     oled1, oled2 = setup_displays()
 
     # dejav_m10.bin must be in the root directory
@@ -192,11 +206,18 @@ async def main():
     asyncio.create_task(cycle_oled(oled2, fd_oled2, rail_data_instance, 2))
 
     # Run the above tasks until Exception or KeyboardInterrupt
+    loop_counter = 0
     while True:
+        loop_counter += 1
         gc.collect()  # Fixes a memory leak someplace
-        print(f"Main loop cycle. Free memory: {gc.mem_free()}")
+        log_message(f"Main loop cycle {loop_counter}. Free memory: {gc.mem_free()}")
         await asyncio.sleep(25)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        log_message("[Program exiting cleanly] KeyboardInterrupt received")
+    finally:
+        asyncio.new_event_loop()  # Clear retained state

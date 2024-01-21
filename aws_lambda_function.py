@@ -3,6 +3,7 @@
 
 import json
 import requests
+import time
 
 
 def keep_keys_in_dict(dict_del, keys):
@@ -74,15 +75,35 @@ def lambda_handler(event, context):
     request_headers = {"x-apikey": api_key}
 
     # Fetch rail data
-    try:
-        response = requests.get(LDBWS_API_URL, headers=request_headers)
-        response.raise_for_status()  # Raise an exception if the response contains an HTTP error status code
-        data = response.json()
-    except requests.exceptions.RequestException as e:
-        return {
-            "statusCode": 500,
-            "body": json.dumps({"error": "Failed to fetch rail data: " + str(e)}),
-        }
+    MAX_RETRIES = 3
+    DELAY_BETWEEN_RETRIES = 0.2  # Delay in seconds
+
+    for i in range(MAX_RETRIES):
+        try:
+            print(
+                f"[AWS] Starting attempt {i+1} of {MAX_RETRIES} to fetch rail data from RailData API."
+            )
+            response = requests.get(LDBWS_API_URL, headers=request_headers)
+            response.raise_for_status()  # Raise an exception if the response contains an HTTP error status code
+            data = response.json()
+            print(f"[AWS] Success: got RailData JSON back on attempt {i+1}.")
+            break  # If the request was successful, break out of the loop
+        except requests.exceptions.RequestException as e:
+            print(
+                f"[AWS] [Error] On attempt {i+1} of {MAX_RETRIES} got error: {str(e)}."
+            )
+            if (
+                i == MAX_RETRIES - 1
+            ):  # If this was the last attempt, re-raise the exception
+                return {
+                    "statusCode": 500,
+                    "body": json.dumps(
+                        {"error": "Failed to fetch rail data: " + str(e)}
+                    ),
+                }
+            else:  # Otherwise, log the error, wait for a while and continue to the next iteration
+                print(f"[AWS] Retrying RailData API in {DELAY_BETWEEN_RETRIES} seconds")
+                time.sleep(DELAY_BETWEEN_RETRIES)
 
     # Filter services based on platform and only include specific fields
     # Specify the fields to keep. Rest are deleted. Parents of subkeys specified are kept.
@@ -97,6 +118,9 @@ def lambda_handler(event, context):
         "destination.locationName",
     ]
 
+    print(
+        "[AWS] Filtering services based on platform and only including specific fields."
+    )
     filtered_services = []
     for service in data.get("trainServices", []):
         if platform_numbers is None or (
@@ -104,6 +128,7 @@ def lambda_handler(event, context):
         ):
             keep_keys_in_dict(service, keys_to_keep)
             filtered_services.append(service)
+    print(f"[AWS] Success: filtered services.")
 
     # Limit to the first two services for each platform
     platform_services = {}
@@ -115,9 +140,12 @@ def lambda_handler(event, context):
             platform_services[platform].append(service)
 
     # Flatten the dictionary to a list
+    print("[AWS] Flattening the dictionary to a list.")
     filtered_services = [
         service for services in platform_services.values() for service in services
     ]
+
+    print(f"[AWS] Final list of services to send as response: {filtered_services}")
 
     # Return the filtered data inside the trinaServices key
     return {"statusCode": 200, "body": json.dumps({"trainServices": filtered_services})}

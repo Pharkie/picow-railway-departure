@@ -15,7 +15,7 @@ import display_utils
 import os
 
 
-def log(message, level="INFO"):
+def log_message(message, level="INFO"):
     max_log_size = 100 * 1024
     max_log_files = 2
     timestamp = utime.localtime(utime.time())
@@ -78,7 +78,7 @@ def connect_wifi(oled1=None, oled2=None, fd_oled1=None, fd_oled2=None):
     while waited > 0:
         if wlan.status() < 0 or wlan.status() >= 3:
             break
-        log(f"Waiting for Wifi to connect {max_wait + 1 - waited}/{max_wait}")
+        log_message(f"Waiting for Wifi to connect {max_wait + 1 - waited}/{max_wait}")
         display_utils.both_screen_text(
             oled1,
             oled2,
@@ -93,7 +93,7 @@ def connect_wifi(oled1=None, oled2=None, fd_oled1=None, fd_oled2=None):
         utime.sleep(1)
 
     if network.WLAN(network.STA_IF).isconnected():
-        log("Wifi connected")
+        log_message("Wifi connected")
         display_utils.both_screen_text(
             oled1,
             oled2,
@@ -105,7 +105,7 @@ def connect_wifi(oled1=None, oled2=None, fd_oled1=None, fd_oled2=None):
             config.THIN_LINETWO_Y,
         )
     else:
-        log("Wifi not connected: timed out")
+        log_message("Wifi not connected: timed out")
         display_utils.both_screen_text(
             oled1,
             oled2,

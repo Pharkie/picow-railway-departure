@@ -125,7 +125,7 @@ async def sync_rtc():
         hours = random.randint(0, 23)
         minutes = random.randint(0, 59)
         seconds = random.randint(0, 59)
-        utils.log(
+        utils.log_message(
             f"Offline mode: setting a random time {hours:02d}:{minutes:02d}:{seconds:02d}"
         )
         rtc = machine.RTC()
@@ -160,6 +160,6 @@ async def sync_rtc():
                     0,
                 )
             )
-            utils.log(f"RTC time set from NTP with DST: {is_DST_flag}\n")
+            utils.log_message(f"RTC time set from NTP with DST: {is_DST_flag}\n")
         except Exception as e:
-            utils.log(f"Failed to set RTC from NTP: {e}")
+            utils.log_message(f"Failed to set RTC from NTP: {e}")
