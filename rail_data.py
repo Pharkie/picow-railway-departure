@@ -205,16 +205,20 @@ class RailData:
         """
         try:
             if data_JSON:
-                train_services = data_JSON.get("trainServices")
+                train_services = data_JSON.get("trainServices", [])
 
-                if train_services:
-                    # print(f"Train services: {json.dumps(train_services)}")  # Debug print
-                    self.oled1_departures = self.parse_departures(
-                        train_services, config.OLED1_PLATFORM_NUMBER
-                    )
-                    self.oled2_departures = self.parse_departures(
-                        train_services, config.OLED2_PLATFORM_NUMBER
-                    )
+                # print(f"Train services: {json.dumps(train_services)}")  # Debug print
+                self.oled1_departures = (
+                    self.parse_departures(train_services, config.OLED1_PLATFORM_NUMBER)
+                    if train_services
+                    else []
+                )
+
+                self.oled2_departures = (
+                    self.parse_departures(train_services, config.OLED2_PLATFORM_NUMBER)
+                    if train_services
+                    else []
+                )
 
                 # Check if CUSTOM_TRAVEL_ALERT is defined in config.py
                 if getattr(config, "CUSTOM_TRAVEL_ALERT", None):
