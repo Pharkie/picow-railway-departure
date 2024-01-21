@@ -168,11 +168,10 @@ async def main():
     set_global_exception()  # Debug aid
 
     log_message(
-        f"\n\n[Program started] {'OFFLINE' if config.OFFLINE_MODE else 'ONLINE'} mode.\n",
-        level="INFO",
+        f"\n\n[Program started] {'OFFLINE' if config.OFFLINE_MODE else 'ONLINE'} mode.\n"
     )
     if not config.OFFLINE_MODE:
-        log_message(f"Using API: {config.API_SOURCE}", level="INFO")
+        log_message(f"Using API: {config.API_SOURCE}")
     gc.threshold(
         gc.mem_free() // 4 + gc.mem_alloc()
     )  # Set threshold for gc at 25% free memory

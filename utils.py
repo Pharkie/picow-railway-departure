@@ -15,7 +15,7 @@ import display_utils
 import os
 
 
-def log_message(message, level="INFO"):
+def log_message(log_message, level="INFO"):
     max_log_size = 100 * 1024
     max_log_files = 2
     timestamp = utime.localtime(utime.time())
@@ -23,17 +23,15 @@ def log_message(message, level="INFO"):
         f"{timestamp[0]:04d}-{timestamp[1]:02d}-{timestamp[2]:02d} "
         + f"{timestamp[3]:02d}:{timestamp[4]:02d}:{timestamp[5]:02d}"
     )
-    log_message = f"{formatted_timestamp} [{level}]: {message}\n"
+    log_message = f"{formatted_timestamp} [{level}]: {log_message}\n"
 
     print(log_message)
 
     log_filename = "rail_data_log.txt"
     try:
         if os.stat(log_filename)[6] > max_log_size:
-            # If the log file is too big, rotate it
-            print(
-                f"Rotating log file {log_filename}. Max log size: {max_log_size} bytes, max log files: {max_log_files}"
-            )
+            # If the log file is too big, rotate it.
+            log_message += f"\nRotating log file {log_filename}. Max log size: {max_log_size} bytes, max log files: {max_log_files}"
 
             try:
                 os.remove(f"{log_filename}.{max_log_files}")

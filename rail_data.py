@@ -26,10 +26,7 @@ class RailData:
             try:
                 gc.collect()
 
-                log_message(
-                    f"Calling API attempt {attempt+1} of {max_attempts}",
-                    level="ERROR",
-                )
+                log_message(f"Calling API attempt {attempt+1} of {max_attempts}")
 
                 if config.API_SOURCE == "RailDataOrg":
                     rail_data_url = (
@@ -254,8 +251,8 @@ async def main():
 
     utils.connect_wifi()
 
-    log_message("\n\n[Program started]\n", level="INFO")
-    log_message(f"Using API: {config.API_SOURCE}", level="INFO")
+    log_message("\n\n[Program started]\n")
+    log_message(f"Using API: {config.API_SOURCE}")
 
     if utils.is_wifi_connected():
         ntptime.settime()
