@@ -17,14 +17,20 @@ class RailData:
         self.oled2_departures = []
         self.get_rail_data_count = 0
 
-    async def fetch_data_from_api(self, max_retries=3):
+    async def fetch_data_from_api(self, max_attempts=3):
         assert utils.is_wifi_connected(), "Wifi not connected"
         rail_data_headers = {"x-apikey": credentials.RAILDATAORG_API_KEY}
 
-        for i in range(max_retries):
+        for attempt in range(max_attempts):
             response = None
             try:
                 gc.collect()
+
+                log_message(
+                    f"Calling API attempt {attempt+1} of {max_attempts}",
+                    level="ERROR",
+                )
+
                 if config.API_SOURCE == "RailDataOrg":
                     rail_data_url = (
                         f"{config.RAILDATAORG_API_URL}/{config.STATION_CRS}"
@@ -72,13 +78,19 @@ class RailData:
                 gc.collect()
                 return json_data
             except (OSError, ValueError, TypeError, MemoryError) as e:
-                log_message(
-                    f"Error with request to API on attempt {i+1}: {e}", level="ERROR"
-                )
-                # If this is not the last attempt, wait for 2^i seconds then retry
-                if i < max_retries - 1:
-                    await asyncio.sleep(2**i)  # Exponential backoff
+                # If this is not the last attempt, wait then retry
+                if attempt < max_attempts - 1:
+                    wait_time = 3 ** (attempt + 2)  # Exponential backoff
+                    log_message(
+                        f"Error with request to API on attempt {attempt+1} of {max_attempts}: {e}. Retry in {wait_time} seconds",
+                        level="ERROR",
+                    )
+                    await asyncio.sleep(wait_time)  # Exponential backoff
                 else:
+                    log_message(
+                        f"Max retries {max_attempts} reached. Raising Exception.",
+                        level="ERROR",
+                    )
                     raise  # If all retries have failed, raise the exception
             finally:
                 if response:
