@@ -59,7 +59,7 @@ class RailData:
                         level="ERROR",
                     )
                     raise OSError(
-                        "HTTP request failed, status code {response.status_code}"
+                        f"HTTP request failed, status code {response.status_code}"
                     )
 
                 # Log the size of the response data in KB, rounded to 2 decimal places
@@ -75,10 +75,11 @@ class RailData:
                 log_message(
                     f"Error with request to API on attempt {i+1}: {e}", level="ERROR"
                 )
-                if i < max_retries - 1:  # No delay after the last attempt
+                # If this is not the last attempt, wait for 2^i seconds then retry
+                if i < max_retries - 1:
                     await asyncio.sleep(2**i)  # Exponential backoff
-                raise e  # Re-raise the exception to stop the program.
-
+                else:
+                    raise  # If all retries have failed, raise the exception
             finally:
                 if response:
                     response.close()
