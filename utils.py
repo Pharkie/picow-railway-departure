@@ -31,7 +31,7 @@ def log_message(log_message, level="INFO"):
     try:
         if os.stat(log_filename)[6] > max_log_size:
             # If the log file is too big, rotate it.
-            log_message += f"\nRotating log file {log_filename}. Max log size: {max_log_size} bytes, max log files: {max_log_files}"
+            log_message += f"\nRotating log file {log_filename}. Max log size: {max_log_size} bytes, max rotated log files: {max_log_files}\n"
 
             try:
                 os.remove(f"{log_filename}.{max_log_files}")

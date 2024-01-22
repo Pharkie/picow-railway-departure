@@ -17,16 +17,18 @@ class RailData:
         self.oled2_departures = []
         self.get_rail_data_count = 0
 
-    async def fetch_data_from_api(self, max_attempts=3):
+    async def fetch_data_from_api(self):
         assert utils.is_wifi_connected(), "Wifi not connected"
         rail_data_headers = {"x-apikey": credentials.RAILDATAORG_API_KEY}
 
-        for attempt in range(max_attempts):
+        for attempt in range(config.MAX_API_ATTEMPTS):
             response = None
             try:
                 gc.collect()
 
-                log_message(f"Calling API attempt {attempt+1} of {max_attempts}")
+                log_message(
+                    f"Calling API attempt {attempt+1} of {config.MAX_API_ATTEMPTS}"
+                )
 
                 if config.API_SOURCE == "RailDataOrg":
                     rail_data_url = (
@@ -76,16 +78,16 @@ class RailData:
                 return json_data
             except (OSError, ValueError, TypeError, MemoryError) as e:
                 # If this is not the last attempt, wait then retry
-                if attempt < max_attempts - 1:
+                if attempt < config.MAX_API_ATTEMPTS - 1:
                     wait_time = 3 ** (attempt + 2)  # Exponential backoff
                     log_message(
-                        f"Error with request to API on attempt {attempt+1} of {max_attempts}: {e}. Retry in {wait_time} seconds",
+                        f"Error with request to API on attempt {attempt+1} of {config.MAX_API_ATTEMPTS}: {e}. Retry in {wait_time} seconds",
                         level="ERROR",
                     )
                     await asyncio.sleep(wait_time)  # Exponential backoff
                 else:
                     log_message(
-                        f"Max retries {max_attempts} reached. Raising Exception.",
+                        f"Max retries {config.MAX_API_ATTEMPTS} reached. Raising Exception.",
                         level="ERROR",
                     )
                     raise  # If all retries have failed, raise the exception

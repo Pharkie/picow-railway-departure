@@ -77,6 +77,10 @@ AWS_API_ID = host_parts[0]
 AWS_API_SERVICE = host_parts[1]
 AWS_API_REGION = host_parts[2]
 
+# Number of attempts to make to the API before giving up
+# Each attempt uses an exponential backoff calc to increase the time between attempts.
+MAX_API_ATTEMPTS = const(4)
+
 # OLED screen params (SSD1306)
 LINEONE_Y = const(0)
 THIN_LINETWO_Y = const(11)
