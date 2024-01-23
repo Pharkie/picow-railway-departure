@@ -44,9 +44,10 @@ This project uses a Raspberry Pi Pico with an OLED display to show departure boa
 
 ## Known Issues
 
-The application doesn't handle DST change while the device is running, since it only checks at startup.
-
-Large responses from Rail Data API likely to crash the system (use AWS API instead).
+* Clock may skip a second every now and then due to device being busy elsewhere.
+* Once a minute, display updates will slow or freeze for a couple seconds while fetching API updates.
+* The application doesn't handle DST change while the device is running, since it only checks at startup.
+* Large responses from Rail Data API likely to crash the system (use AWS API instead).
 
 ## License
 
