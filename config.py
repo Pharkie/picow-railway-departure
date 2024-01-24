@@ -81,6 +81,8 @@ AWS_API_REGION = host_parts[2]
 # Each attempt uses an exponential backoff calc to increase the time between attempts.
 MAX_API_ATTEMPTS = const(4)
 
+BASE_API_UPDATE_INTERVAL = const(60)  # Seconds
+
 # OLED screen params (SSD1306)
 LINEONE_Y = const(0)
 THIN_LINETWO_Y = const(11)

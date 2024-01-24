@@ -114,37 +114,62 @@ class RailData:
             else " and ".join(get_departure(d) for d in departures[:2])
         )
 
-    async def get_rail_data(self):
+    def get_offline_rail_data(self):
         """
-        Get data from the National Rail API.
+        Get data from a file.
         """
         self.get_rail_data_count += 1
         log_message(
-            f"get_rail_data call {self.get_rail_data_count}. Free memory: {gc.mem_free()}",
+            f"get_offline_rail_data call {self.get_rail_data_count}. Free memory: {gc.mem_free()}",
             level="DEBUG",
         )
 
-        response_JSON = None
-
-        if config.OFFLINE_MODE:
-            response_JSON = self.fetch_data_from_file()
-        else:
-            response_JSON = await self.fetch_data_from_api()
-
-        # log(f"\nresponse_JSON: {response_JSON}\n")  # Debug print
+        response_JSON = self.fetch_data_from_file()
 
         self.parse_rail_data(response_JSON)
         gc.collect()
 
-        offline_status = "OFFLINE" if config.OFFLINE_MODE else "ONLINE"
         oled1_summary = self.get_departure_summary(self.oled1_departures)
         oled2_summary = self.get_departure_summary(self.oled2_departures)
 
         log_message(
-            f"[{offline_status}] get_rail_data() got oled1_departures (Platform {config.OLED1_PLATFORM_NUMBER}): "
+            f"[OFFLINE] get_offline_rail_data() got oled1_departures (Platform {config.OLED1_PLATFORM_NUMBER}): "
+            + f"{oled1_summary} and oled2_departures (Platform {config.OLED2_PLATFORM_NUMBER}): {oled2_summary}",
+            level="INFO",
+        )
+
+    async def get_online_rail_data(self):
+        self.get_rail_data_count += 1
+        log_message(
+            f"get_online_rail_data call {self.get_rail_data_count}. Free memory: {gc.mem_free()}",
+            level="DEBUG",
+        )
+
+        response_JSON = await self.fetch_data_from_api()
+
+        self.parse_rail_data(response_JSON)
+        gc.collect()
+
+        oled1_summary = self.get_departure_summary(self.oled1_departures)
+        oled2_summary = self.get_departure_summary(self.oled2_departures)
+
+        log_message(
+            f"[ONLINE] get_online_rail_data() got oled1_departures (Platform {config.OLED1_PLATFORM_NUMBER}): "
             + f"{oled1_summary} and oled2_departures (Platform {config.OLED2_PLATFORM_NUMBER}): {oled2_summary}",
             level="DEBUG",
         )
+
+    async def cycle_get_online_rail_data(self):
+        """
+        Get data from the National Rail API.
+        """
+        api_update_secs = config.BASE_API_UPDATE_INTERVAL
+
+        # Enter a loop to periodically fetch updates
+        while True:
+            log_message(f"Waiting {api_update_secs} seconds")
+            await asyncio.sleep(api_update_secs)
+            await self.get_online_rail_data()
 
     def parse_service(self, service):
         if not service:
@@ -261,6 +286,9 @@ async def main():
 
         loop_counter = 0
 
+        await rail_data_instance.get_online_rail_data()
+        asyncio.create_task(rail_data_instance.cycle_get_online_rail_data())
+
         while True:
             loop_counter += 1
             log_message(
@@ -270,9 +298,7 @@ async def main():
             if loop_counter % 5 == 0:
                 gc.collect()  # Fixes a memory leak someplace
 
-            await rail_data_instance.get_rail_data()
-
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(10)  # Pick a number
     else:
         log_message("No wifi connection. Exiting.", level="ERROR")
 

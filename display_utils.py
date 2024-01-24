@@ -297,19 +297,11 @@ async def display_clock(oled, fd_oled):
             clock_string = time_format.format(
                 current_time[3], current_time[4], current_time[5]
             )
-            fd_oled.print_str(
-                clock_string, 46, config.THIN_LINETHREE_Y
-            )  # Hardcoded x to save calcs
-
-        if config.OFFLINE_MODE:
-            counter += 1
-            if counter == 15:
-                counter = 0
+            fd_oled.print_str(clock_string, 46, config.THIN_LINETHREE_Y)
 
         oled.show()
-        await asyncio.sleep(
-            0.9
-        )  # Setting to 0.9 helps clock not skip seconds when device busy
+        # Setting to 0.9 helps clock not skip seconds when device busy
+        await asyncio.sleep(0.9)
 
 
 async def display_travel_alert(oled, fd_oled, alert_message):

@@ -200,9 +200,12 @@ async def main():
 
     rail_data_instance = rail_data.RailData()
 
-    # At startup, run both functions once and wait
+    # At startup, run initial data gathering and wait
     await datetime_utils.sync_rtc()
-    await rail_data_instance.get_rail_data()
+    if config.OFFLINE_MODE:
+        rail_data_instance.get_offline_rail_data()
+    else:
+        await rail_data_instance.get_online_rail_data()
 
     asyncio.create_task(display_utils.display_clock(oled1, fd_oled1))
     if oled2:
@@ -210,7 +213,7 @@ async def main():
 
     # update_rail_data_task = asyncio.create_task(run_periodically(rail_data_instance.get_rail_data, 10)) # For testing
     if not config.OFFLINE_MODE:
-        asyncio.create_task(rail_data_instance.get_rail_data)
+        asyncio.create_task(rail_data_instance.cycle_get_online_rail_data())
 
     asyncio.create_task(cycle_oled(oled1, fd_oled1, rail_data_instance, 1))
     if oled2:
