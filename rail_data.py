@@ -106,6 +106,14 @@ class RailData:
             log_message(f"Error loading file JSON: {e}", level="ERROR")
             return None
 
+    def get_departure_summary(self, departures):
+        get_departure = lambda d: f"{d['destination']} ({d['time_scheduled']})"
+        return (
+            "No departures"
+            if not departures
+            else " and ".join(get_departure(d) for d in departures[:2])
+        )
+
     async def get_rail_data(self):
         """
         Get data from the National Rail API.
@@ -129,17 +137,8 @@ class RailData:
         gc.collect()
 
         offline_status = "OFFLINE" if config.OFFLINE_MODE else "ONLINE"
-        get_departure = lambda d: f"{d['destination']} ({d['time_scheduled']})"
-        oled1_summary = (
-            "No departures"
-            if not self.oled1_departures
-            else " and ".join(get_departure(d) for d in self.oled1_departures[:2])
-        )
-        oled2_summary = (
-            "No departures"
-            if not self.oled2_departures
-            else " and ".join(get_departure(d) for d in self.oled2_departures[:2])
-        )
+        oled1_summary = self.get_departure_summary(self.oled1_departures)
+        oled2_summary = self.get_departure_summary(self.oled2_departures)
 
         log_message(
             f"[{offline_status}] get_rail_data() got oled1_departures (Platform {config.OLED1_PLATFORM_NUMBER}): "

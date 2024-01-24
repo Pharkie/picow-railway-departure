@@ -15,11 +15,11 @@ import config
 
 
 def display_init_message(oled1, oled2, fd_oled1, fd_oled2):
-    screens = [(oled1, fd_oled1, 1), (oled2, fd_oled2, 2)]
-    number_of_screens = 2 if oled2 is not None else 1
+    screens = [(oled1, fd_oled1), (oled2, fd_oled2)]
+    number_of_screens = sum(oled is not None for oled, _ in screens)
 
-    for oled, fd_oled, screen_number in screens:
-        if oled is not None:
+    for screen_number, (oled, fd_oled) in enumerate(screens, start=1):
+        if oled:
             oled.fill(0)
             fd_oled.print_str("Loading", 0, config.LINEONE_Y)
             fd_oled.print_str("Pico departures", 0, config.THIN_LINETWO_Y)

@@ -63,7 +63,7 @@ def initialize_oled(i2c, display_name):
         oled = SSD1306_I2C(config.DISPLAY_WIDTH, config.DISPLAY_HEIGHT, i2c)
 
         return oled
-    except Exception as e:
+    except OSError as e:
         log_message(f"Failed to initialize {display_name}. Error: {str(e)}")
         return None
 
@@ -172,6 +172,7 @@ async def main():
     )
     if not config.OFFLINE_MODE:
         log_message(f"Using API: {config.API_SOURCE}")
+
     gc.threshold(
         gc.mem_free() // 4 + gc.mem_alloc()
     )  # Set threshold for gc at 25% free memory
@@ -182,12 +183,17 @@ async def main():
 
     # dejav_m10.bin must be in the root directory
     fd_oled1 = FontDrawer(frame_buffer=oled1, font_name="dejav_m10")
-    fd_oled2 = FontDrawer(frame_buffer=oled2, font_name="dejav_m10")
+    if oled2:
+        fd_oled2 = FontDrawer(frame_buffer=oled2, font_name="dejav_m10")
+    else:
+        fd_oled2 = None
 
     display_utils.display_init_message(oled1, oled2, fd_oled1, fd_oled2)
     utime.sleep(2)
+
     display_utils.clear_display(oled1)
-    display_utils.clear_display(oled2)
+    if oled2:
+        display_utils.clear_display(oled2)
 
     if not config.OFFLINE_MODE:
         utils.connect_wifi(oled1, oled2, fd_oled1, fd_oled2)
@@ -199,14 +205,16 @@ async def main():
     await rail_data_instance.get_rail_data()
 
     asyncio.create_task(display_utils.display_clock(oled1, fd_oled1))
-    asyncio.create_task(display_utils.display_clock(oled2, fd_oled2))
+    if oled2:
+        asyncio.create_task(display_utils.display_clock(oled2, fd_oled2))
 
     # update_rail_data_task = asyncio.create_task(run_periodically(rail_data_instance.get_rail_data, 10)) # For testing
     if not config.OFFLINE_MODE:
-        asyncio.create_task(run_periodically(rail_data_instance.get_rail_data, 60))
+        asyncio.create_task(rail_data_instance.get_rail_data)
 
     asyncio.create_task(cycle_oled(oled1, fd_oled1, rail_data_instance, 1))
-    asyncio.create_task(cycle_oled(oled2, fd_oled2, rail_data_instance, 2))
+    if oled2:
+        asyncio.create_task(cycle_oled(oled2, fd_oled2, rail_data_instance, 2))
 
     # Run the above tasks until Exception or KeyboardInterrupt
     loop_counter = 0
@@ -221,6 +229,6 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        log_message("[Program exiting cleanly] KeyboardInterrupt received")
+        log_message("[Program exiting cleanly] KeyboardInterrupt received\n")
     finally:
         asyncio.new_event_loop()  # Clear retained state
