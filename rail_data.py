@@ -18,6 +18,7 @@ class RailData:
         self.oled2_departures = []
         self.get_rail_data_count = 0
         self.api_fails = 0
+        self.api_retry_secs = config.BASE_API_UPDATE_INTERVAL
 
     async def fetch_data_from_api(self, oled1, fd_oled1, oled2, fd_oled2):
         assert utils.is_wifi_connected(), "Wifi not connected"
@@ -145,10 +146,10 @@ class RailData:
         Next call backs off on API failure. Delays between API calls (in seconds):
         Retry wait in seconds: 5, 10, 20, 40, 80, 160, 320, 600 max.
         """
-        retry_secs = config.BASE_API_UPDATE_INTERVAL
+        self.api_retry_secs = config.BASE_API_UPDATE_INTERVAL
 
         while True:
-            await asyncio.sleep(retry_secs)
+            await asyncio.sleep(self.api_retry_secs)
 
             try:
                 # Save the current screen contents
@@ -162,7 +163,9 @@ class RailData:
 
                 # If we get here, the API call succeeded
                 self.api_fails = 0  # Reset the failure counter
-                retry_secs = config.BASE_API_UPDATE_INTERVAL  # Reset the retry delay
+                self.api_retry_secs = (
+                    config.BASE_API_UPDATE_INTERVAL
+                )  # Reset the retry delay
 
                 # Restore the displays
                 oled1.restore_buffer(oled1_before)
@@ -171,14 +174,14 @@ class RailData:
                 oled2.show()
 
                 log_message(
-                    f"API request success. Next retry in {retry_secs} seconds.",
+                    f"API request success. Next retry in {self.api_retry_secs} seconds.",
                     level="INFO",
                 )
             except (OSError, ValueError, TypeError, MemoryError) as e:
                 self.api_fails += 1
-                retry_secs = min(5 * 2 ** (self.api_fails - 1), 600)
+                self.api_retry_secs = min(5 * 2 ** (self.api_fails - 1), 600)
                 log_message(
-                    f"API request fail: {e}. Next retry in {retry_secs} seconds.",
+                    f"API request fail: {e}. Next retry in {self.api_retry_secs} seconds.",
                     level="ERROR",
                 )
 

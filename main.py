@@ -106,12 +106,19 @@ async def cycle_oled(oled, fd_oled, rail_data_instance, screen_number):
     If there is a travel alert, it displays the alert.
     """
     while True:
-        if rail_data_instance.api_fails > 2:
+        if rail_data_instance.api_fails > 5:  # Sustained API failure
             display_utils.clear_line(oled, config.LINEONE_Y)
             display_utils.clear_line(oled, config.THICK_LINETWO_Y)
-            fd_oled.print_str("Info out of date", 0, config.LINEONE_Y)
-            fd_oled.print_str("Please wait for retry", 0, config.THIN_LINETWO_Y)
+            fd_oled.print_str("Train update failed", 0, config.LINEONE_Y)
+            fd_oled.print_str(
+                f"Retry in {rail_data_instance.api_retry_secs} secs",
+                0,
+                config.THIN_LINETWO_Y,
+            )
             oled.show()
+
+            # No point rerunning this code every 3 seconds, so every 30.
+            await asyncio.sleep(27)
         else:
             if screen_number == 1:
                 departures = rail_data_instance.oled1_departures
@@ -224,6 +231,6 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        log_message("[Program exiting cleanly] KeyboardInterrupt received\n")
+        log_message("[Program exiting cleanly] Keyboard Interrupt")
     finally:
         asyncio.new_event_loop()  # Clear retained state
