@@ -90,27 +90,6 @@ def setup_displays():
     return setup_oled1, setup_oled2
 
 
-async def run_periodically(func, wait_seconds):
-    """
-    This coroutine runs a given function periodically at a given interval.
-
-    Parameters:
-    func: The function to run.
-    interval: The interval (in seconds) at which to run the function.
-    """
-    await asyncio.sleep(wait_seconds)
-    while True:
-        try:
-            await func()
-        except Exception as e:
-            log_message(
-                f"run_periodically() caught exception so exiting. Free memory: {gc.mem_free()}. Details: {e} ",
-                level="ERROR",
-            )
-            raise  # Re-raise the exception (with traceback)to stop the program.
-        await asyncio.sleep(wait_seconds)
-
-
 async def cycle_oled(oled, fd_oled, rail_data_instance, screen_number):
     """
     This coroutine manages the display of departures and travel alerts on an OLED screen.
@@ -212,7 +191,6 @@ async def main():
     if oled2:
         asyncio.create_task(display_utils.display_clock(oled2, fd_oled2))
 
-    # update_rail_data_task = asyncio.create_task(run_periodically(rail_data_instance.get_rail_data, 10)) # For testing
     if not config.OFFLINE_MODE:
         asyncio.create_task(
             rail_data_instance.cycle_get_online_rail_data(

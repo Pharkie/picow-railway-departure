@@ -156,7 +156,7 @@ class RailData:
                 oled2_before = oled2.save_buffer()
 
                 display_utils.both_screen_text(
-                    oled1, oled2, fd_oled1, fd_oled2, "Awaiting update", 12
+                    oled1, oled2, fd_oled1, fd_oled2, "Updating trains", 12
                 )
                 await self.get_online_rail_data(oled1, fd_oled1, oled2, fd_oled2)
 
