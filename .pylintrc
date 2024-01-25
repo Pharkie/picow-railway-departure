@@ -2,4 +2,4 @@
 # but should not raise import errors for them.
 
 [MASTER]
-ignored-modules=utime,ntptime,machine,micropython,ujson
+ignored-modules=utime,ntptime,machine,micropython,ujson,framebuf,network

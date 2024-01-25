@@ -5,6 +5,8 @@
 #
 from micropython import const
 import framebuf
+from lib.fdrawer import FontDrawer
+import config
 
 # register definitions
 SET_CONTRAST = const(0x81)
@@ -35,6 +37,10 @@ class SSD1306(framebuf.FrameBuffer):
         self.external_vcc = external_vcc
         self.pages = self.height // 8
         self.buffer = bytearray(self.pages * self.width)
+
+        # Added to allow an FontDrawer object for this oled to be kept in the same class
+        self.fd_oled = FontDrawer(self, font_name=config.FONTDRAWER_FONT_NAME)
+
         super().__init__(self.buffer, self.width, self.height, framebuf.MONO_VLSB)
         self.init_display()
 

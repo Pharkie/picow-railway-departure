@@ -43,6 +43,8 @@ RAILDATAORG_NUMBER_OF_SERVICES = const(6)
 
 OFFLINE_JSON_FILE = "sample_data.json"  # File to use for offline mode
 
+FONTDRAWER_FONT_NAME = "dejav_m10"  # Font to use for drawing text on the OLEDs
+
 # CUSTOM_TRAVEL_ALERT = "This is a 100 character long test travel alert for testing purposes. Please ignore. 12345"  # Set to None to disable
 
 # I2C pins for OLED screens

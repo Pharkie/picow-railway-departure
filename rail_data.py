@@ -20,7 +20,7 @@ class RailData:
         self.api_fails = 0
         self.api_retry_secs = config.BASE_API_UPDATE_INTERVAL
 
-    async def fetch_data_from_api(self, oled1, fd_oled1, oled2, fd_oled2):
+    async def fetch_data_from_api(self):
         assert utils.is_wifi_connected(), "Wifi not connected"
         rail_data_headers = {"x-apikey": credentials.RAILDATAORG_API_KEY}
 
@@ -119,17 +119,29 @@ class RailData:
             level="INFO",
         )
 
-    async def get_online_rail_data(self, oled1, fd_oled1, oled2, fd_oled2):
+    async def get_online_rail_data(self, oled1, oled2):
         self.get_rail_data_count += 1
         log_message(
             f"get_online_rail_data call {self.get_rail_data_count}. Free memory: {gc.mem_free()}",  # pylint: disable=no-member
             level="DEBUG",
         )
 
-        response_JSON = await self.fetch_data_from_api(oled1, fd_oled1, oled2, fd_oled2)
+        # Save the current screen contents
+        oled1_before = oled1.save_buffer()
+        oled2_before = oled2.save_buffer()
+
+        display_utils.both_screen_text(oled1, oled2, "Updating trains", 12)
+
+        response_JSON = await self.fetch_data_from_api()
 
         self.parse_rail_data(response_JSON)
         gc.collect()
+
+        # Restore the displays
+        oled1.restore_buffer(oled1_before)
+        oled2.restore_buffer(oled2_before)
+        oled1.show()
+        oled2.show()
 
         oled1_summary = self.get_departure_summary(self.oled1_departures)
         oled2_summary = self.get_departure_summary(self.oled2_departures)
@@ -140,7 +152,7 @@ class RailData:
             level="DEBUG",
         )
 
-    async def cycle_get_online_rail_data(self, oled1, fd_oled1, oled2, fd_oled2):
+    async def cycle_get_online_rail_data(self, oled1, oled2):
         """
         Updates rail data from the API every BASE_API_UPDATE_INTERVAL seconds.
         Next call backs off on API failure. Delays between API calls (in seconds):
@@ -152,26 +164,13 @@ class RailData:
             await asyncio.sleep(self.api_retry_secs)
 
             try:
-                # Save the current screen contents
-                oled1_before = oled1.save_buffer()
-                oled2_before = oled2.save_buffer()
-
-                display_utils.both_screen_text(
-                    oled1, oled2, fd_oled1, fd_oled2, "Updating trains", 12
-                )
-                await self.get_online_rail_data(oled1, fd_oled1, oled2, fd_oled2)
+                await self.get_online_rail_data(oled1, oled2)
 
                 # If we get here, the API call succeeded
                 self.api_fails = 0  # Reset the failure counter
                 self.api_retry_secs = (
                     config.BASE_API_UPDATE_INTERVAL
                 )  # Reset the retry delay
-
-                # Restore the displays
-                oled1.restore_buffer(oled1_before)
-                oled2.restore_buffer(oled2_before)
-                oled1.show()
-                oled2.show()
 
                 log_message(
                     f"API request success. Next retry in {self.api_retry_secs} seconds.",
@@ -181,7 +180,7 @@ class RailData:
                 self.api_fails += 1
                 self.api_retry_secs = min(5 * 2 ** (self.api_fails - 1), 180)
                 log_message(
-                    f"API request fail: {e}. Next retry in {self.api_retry_secs} seconds.",
+                    f"API request fail #{self.api_fails}: {e}. Next retry in {self.api_retry_secs} seconds.",
                     level="ERROR",
                 )
 
@@ -296,7 +295,7 @@ async def main():
     log_message(f"Using API: {config.API_SOURCE}")
 
     # Initiliase to None since not used?
-    oled1, oled2, fd_oled1, fd_oled2 = None, None, None, None
+    oled1, oled2 = None, None
 
     if utils.is_wifi_connected():
         ntptime.settime()
@@ -304,12 +303,8 @@ async def main():
 
         loop_counter = 0
 
-        await rail_data_instance.get_online_rail_data(oled1, fd_oled1, oled2, fd_oled2)
-        asyncio.create_task(
-            rail_data_instance.cycle_get_online_rail_data(
-                oled1, fd_oled1, oled2, fd_oled2
-            )
-        )
+        await rail_data_instance.get_online_rail_data(oled1, oled2)
+        asyncio.create_task(rail_data_instance.cycle_get_online_rail_data(oled1, oled2))
 
         while True:
             loop_counter += 1

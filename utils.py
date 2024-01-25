@@ -7,12 +7,12 @@ Description: General utils not specific to a particular thing
 GitHub Repository: https://github.com/Pharkie/AdamGalactic/
 License: GNU General Public License (GPL)
 """
-import network  # type: ignore
-import utime  # type: ignore
+import os
+import network
+import utime
 import credentials
 import config
 import display_utils
-import os
 
 
 def log_message(message, level="INFO"):
@@ -52,7 +52,7 @@ def log_message(message, level="INFO"):
             log_file.write(log_message)
 
 
-def connect_wifi(oled1=None, oled2=None, fd_oled1=None, fd_oled2=None):
+def connect_wifi(oled1=None, oled2=None):
     # log("connect_wifi() called")
     global offline_mode
 
@@ -82,8 +82,6 @@ def connect_wifi(oled1=None, oled2=None, fd_oled1=None, fd_oled2=None):
         display_utils.both_screen_text(
             oled1,
             oled2,
-            fd_oled1,
-            fd_oled2,
             "Connecting wifi",
             config.LINEONE_Y,
             f"{max_wait + 1 - waited}/{max_wait}",
@@ -97,8 +95,6 @@ def connect_wifi(oled1=None, oled2=None, fd_oled1=None, fd_oled2=None):
         display_utils.both_screen_text(
             oled1,
             oled2,
-            fd_oled1,
-            fd_oled2,
             "Wifi connected",
             config.LINEONE_Y,
             ":)",
@@ -109,8 +105,6 @@ def connect_wifi(oled1=None, oled2=None, fd_oled1=None, fd_oled2=None):
         display_utils.both_screen_text(
             oled1,
             oled2,
-            fd_oled1,
-            fd_oled2,
             "Config = online",
             config.LINEONE_Y,
             "But no wifi :(",

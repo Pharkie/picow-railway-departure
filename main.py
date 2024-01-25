@@ -90,7 +90,7 @@ def setup_displays():
     return setup_oled1, setup_oled2
 
 
-async def cycle_oled(oled, fd_oled, rail_data_instance, screen_number):
+async def cycle_oled(oled, rail_data_instance, screen_number):
     """
     This coroutine manages the display of departures and travel alerts on an OLED screen.
 
@@ -106,11 +106,11 @@ async def cycle_oled(oled, fd_oled, rail_data_instance, screen_number):
     If there is a travel alert, it displays the alert.
     """
     while True:
-        if rail_data_instance.api_fails > 5:  # Sustained API failure
+        if rail_data_instance.api_retry_secs >= 90:  # Sustained API failure
             display_utils.clear_line(oled, config.LINEONE_Y)
             display_utils.clear_line(oled, config.THICK_LINETWO_Y)
-            fd_oled.print_str("Train update failed", 0, config.LINEONE_Y)
-            fd_oled.print_str(
+            oled.fd_oled.print_str("Train update failed", 0, config.LINEONE_Y)
+            oled.fd_oled.print_str(
                 f"Retry in {rail_data_instance.api_retry_secs} secs",
                 0,
                 config.THIN_LINETWO_Y,
@@ -127,21 +127,20 @@ async def cycle_oled(oled, fd_oled, rail_data_instance, screen_number):
             elif screen_number == 2:
                 departures = rail_data_instance.oled2_departures
 
+            display_utils.clear_line(oled, config.LINEONE_Y)
+            display_utils.clear_line(oled, config.THICK_LINETWO_Y)
+
             if departures:
-                await display_utils.display_first_departure(
-                    oled, fd_oled, departures[0]
-                )
+                await display_utils.display_first_departure(oled, departures[0])
 
                 if len(departures) > 1:
-                    await display_utils.display_second_departure(
-                        oled, fd_oled, departures[1]
-                    )
+                    await display_utils.display_second_departure(oled, departures[1])
             else:
-                await display_utils.display_no_departures(oled, fd_oled)
+                await display_utils.display_no_departures(oled)
 
             if rail_data_instance.nrcc_message:
                 await display_utils.display_travel_alert(
-                    oled, fd_oled, rail_data_instance.nrcc_message
+                    oled, rail_data_instance.nrcc_message
                 )
 
         await asyncio.sleep(3)
@@ -178,14 +177,7 @@ async def main():
     # log("main() called")
     oled1, oled2 = setup_displays()
 
-    # dejav_m10.bin must be in the root directory
-    fd_oled1 = FontDrawer(frame_buffer=oled1, font_name="dejav_m10")
-    if oled2:
-        fd_oled2 = FontDrawer(frame_buffer=oled2, font_name="dejav_m10")
-    else:
-        fd_oled2 = None
-
-    display_utils.display_init_message(oled1, oled2, fd_oled1, fd_oled2)
+    display_utils.display_init_message(oled1, oled2)
     utime.sleep(2)
 
     display_utils.clear_display(oled1)
@@ -193,7 +185,7 @@ async def main():
         display_utils.clear_display(oled2)
 
     if not config.OFFLINE_MODE:
-        utils.connect_wifi(oled1, oled2, fd_oled1, fd_oled2)
+        utils.connect_wifi(oled1, oled2)
 
     rail_data_instance = rail_data.RailData()
 
@@ -203,22 +195,18 @@ async def main():
         rail_data_instance.get_offline_rail_data()
     else:
         # If this first API call fails, the program exits, since it has nothing to show.
-        await rail_data_instance.get_online_rail_data(oled1, fd_oled1, oled2, fd_oled2)
+        await rail_data_instance.get_online_rail_data(oled1, oled2)
 
-    asyncio.create_task(display_utils.display_clock(oled1, fd_oled1))
+    asyncio.create_task(display_utils.display_clock(oled1))
     if oled2:
-        asyncio.create_task(display_utils.display_clock(oled2, fd_oled2))
+        asyncio.create_task(display_utils.display_clock(oled2))
 
     if not config.OFFLINE_MODE:
-        asyncio.create_task(
-            rail_data_instance.cycle_get_online_rail_data(
-                oled1, fd_oled1, oled2, fd_oled2
-            )
-        )
+        asyncio.create_task(rail_data_instance.cycle_get_online_rail_data(oled1, oled2))
 
-    asyncio.create_task(cycle_oled(oled1, fd_oled1, rail_data_instance, 1))
+    asyncio.create_task(cycle_oled(oled1, rail_data_instance, 1))
     if oled2:
-        asyncio.create_task(cycle_oled(oled2, fd_oled2, rail_data_instance, 2))
+        asyncio.create_task(cycle_oled(oled2, rail_data_instance, 2))
 
     # Run the above tasks until Exception or KeyboardInterrupt
     loop_counter = 0
