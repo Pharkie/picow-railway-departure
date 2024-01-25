@@ -8,6 +8,7 @@ import config
 import credentials
 from utils import log_message
 import aws_api
+import display_utils
 
 
 class RailData:
@@ -17,94 +18,64 @@ class RailData:
         self.oled2_departures = []
         self.get_rail_data_count = 0
 
-    async def fetch_data_from_api(self):
+    async def fetch_data_from_api(self, oled1, fd_oled1, oled2, fd_oled2):
         assert utils.is_wifi_connected(), "Wifi not connected"
         rail_data_headers = {"x-apikey": credentials.RAILDATAORG_API_KEY}
 
-        for attempt in range(config.MAX_API_ATTEMPTS):
-            response = None
-            try:
-                gc.collect()
-
-                log_message(
-                    f"Calling API attempt {attempt+1} of {config.MAX_API_ATTEMPTS}"
-                )
-
-                if config.API_SOURCE == "RailDataOrg":
-                    rail_data_url = (
-                        f"{config.RAILDATAORG_API_URL}/{config.STATION_CRS}"
-                        + f"?numRows={config.RAILDATAORG_NUMBER_OF_SERVICES}"
-                    )
-                    response = requests.get(
-                        url=rail_data_url, headers=rail_data_headers, timeout=10
-                    )
-                elif config.API_SOURCE == "AWS":
-                    rail_data_headers = aws_api.create_signed_headers(
-                        api_host=config.AWS_API_HOST,
-                        api_uri=config.AWS_API_URI,
-                        region=config.AWS_API_REGION,
-                        service=config.AWS_API_SERVICE,
-                        access_key=credentials.AWS_ACCESS_KEY,
-                        secret_key=credentials.AWS_SECRET_ACCESS_KEY,
-                        query_string=config.AWS_API_QUERYSTRING,
-                        additional_headers=rail_data_headers,
-                    )
-
-                    response = requests.get(
-                        url=config.AWS_API_URL, headers=rail_data_headers, timeout=10
-                    )
-
-                if not response:
-                    log_message("No response from API", level="ERROR")
-                    raise OSError("No response from API")
-
-                if response.status_code < 200 or response.status_code >= 300:
-                    log_message(
-                        f"HTTP request failed, status code {response.status_code}",
-                        level="ERROR",
-                    )
-                    raise OSError(
-                        f"HTTP request failed, status code {response.status_code}"
-                    )
-
-                # Log the size of the response data in KB, rounded to 2 decimal places
-                log_message(
-                    f"API response: {round(len(response.content) / 1024, 2)} KB"
-                )
-
-                json_data = ujson.loads(response.text)
-
-                gc.collect()
-                return json_data
-            except (OSError, ValueError, TypeError, MemoryError) as e:
-                # If this is not the last attempt, wait then retry
-                if attempt < config.MAX_API_ATTEMPTS - 1:
-                    wait_time = 3 ** (attempt + 2)  # Exponential backoff
-                    log_message(
-                        f"Error with request to API on attempt {attempt+1} of {config.MAX_API_ATTEMPTS}: {e}. Retry in {wait_time} seconds",
-                        level="ERROR",
-                    )
-                    await asyncio.sleep(wait_time)  # Exponential backoff
-                else:
-                    log_message(
-                        f"Max retries {config.MAX_API_ATTEMPTS} reached. Raising Exception.",
-                        level="ERROR",
-                    )
-                    raise  # If all retries have failed, raise the exception
-            finally:
-                if response:
-                    response.close()
-
-    def fetch_data_from_file(self):
+        response = None
+        # Exceptions are caught by the caller
         try:
-            with open(config.OFFLINE_JSON_FILE, "r") as offline_data_file:
-                return ujson.load(offline_data_file)
-        except OSError as e:
-            log_message(f"Error opening or reading file: {e}", level="ERROR")
-            return None
-        except ValueError as e:
-            log_message(f"Error loading file JSON: {e}", level="ERROR")
-            return None
+            gc.collect()
+
+            log_message("Calling API", level="DEBUG")
+
+            if config.API_SOURCE == "RailDataOrg":
+                rail_data_url = (
+                    f"{config.RAILDATAORG_API_URL}/{config.STATION_CRS}"
+                    + f"?numRows={config.RAILDATAORG_NUMBER_OF_SERVICES}"
+                )
+                response = requests.get(
+                    url=rail_data_url, headers=rail_data_headers, timeout=10
+                )
+            elif config.API_SOURCE == "AWS":
+                rail_data_headers = aws_api.create_signed_headers(
+                    api_host=config.AWS_API_HOST,
+                    api_uri=config.AWS_API_URI,
+                    region=config.AWS_API_REGION,
+                    service=config.AWS_API_SERVICE,
+                    access_key=credentials.AWS_ACCESS_KEY,
+                    secret_key=credentials.AWS_SECRET_ACCESS_KEY,
+                    query_string=config.AWS_API_QUERYSTRING,
+                    additional_headers=rail_data_headers,
+                )
+
+                response = requests.get(
+                    url=config.AWS_API_URL, headers=rail_data_headers, timeout=10
+                )
+
+            if not response:
+                log_message("No response from API", level="ERROR")
+                raise OSError("No response from API")
+
+            if response.status_code < 200 or response.status_code >= 300:
+                log_message(
+                    f"HTTP request failed, status code {response.status_code}",
+                    level="ERROR",
+                )
+                raise OSError(
+                    f"HTTP request failed, status code {response.status_code}"
+                )
+
+            # Log the size of the response data in KB, rounded to 2 decimal places
+            log_message(f"API response: {round(len(response.content) / 1024, 2)} KB")
+
+            json_data = ujson.loads(response.text)
+
+            gc.collect()
+            return json_data
+        finally:
+            if response:
+                response.close()
 
     def get_departure_summary(self, departures):
         get_departure = lambda d: f"{d['destination']} ({d['time_scheduled']})"
@@ -124,7 +95,15 @@ class RailData:
             level="DEBUG",
         )
 
-        response_JSON = self.fetch_data_from_file()
+        try:
+            with open(config.OFFLINE_JSON_FILE, "r") as offline_data_file:
+                response_JSON = ujson.load(offline_data_file)
+        except OSError as e:
+            log_message(f"Error opening or reading file: {e}", level="ERROR")
+            raise
+        except ValueError as e:
+            log_message(f"Error loading file JSON: {e}", level="ERROR")
+            raise
 
         self.parse_rail_data(response_JSON)
         gc.collect()
@@ -138,14 +117,14 @@ class RailData:
             level="INFO",
         )
 
-    async def get_online_rail_data(self):
+    async def get_online_rail_data(self, oled1, fd_oled1, oled2, fd_oled2):
         self.get_rail_data_count += 1
         log_message(
             f"get_online_rail_data call {self.get_rail_data_count}. Free memory: {gc.mem_free()}",
             level="DEBUG",
         )
 
-        response_JSON = await self.fetch_data_from_api()
+        response_JSON = await self.fetch_data_from_api(oled1, fd_oled1, oled2, fd_oled2)
 
         self.parse_rail_data(response_JSON)
         gc.collect()
@@ -159,17 +138,49 @@ class RailData:
             level="DEBUG",
         )
 
-    async def cycle_get_online_rail_data(self):
+    async def cycle_get_online_rail_data(self, oled1, fd_oled1, oled2, fd_oled2):
         """
-        Get data from the National Rail API.
+        Updates rail data from the API every BASE_API_UPDATE_INTERVAL seconds.
+        Next call backs off on API failure. Delays between API calls (in seconds):
+        Retry wait in seconds: 5, 10, 20, 40, 80, 160, 320, 600 max.
         """
-        api_update_secs = config.BASE_API_UPDATE_INTERVAL
+        retry_secs = config.BASE_API_UPDATE_INTERVAL
+        api_call_fails = 0
 
-        # Enter a loop to periodically fetch updates
         while True:
-            log_message(f"Waiting {api_update_secs} seconds")
-            await asyncio.sleep(api_update_secs)
-            await self.get_online_rail_data()
+            await asyncio.sleep(retry_secs)
+
+            try:
+                # Save the current screen contents
+                oled1_before = oled1.save_buffer()
+                oled2_before = oled2.save_buffer()
+
+                display_utils.both_screen_text(
+                    oled1, oled2, fd_oled1, fd_oled2, "Awaiting update", 12
+                )
+                await self.get_online_rail_data(oled1, fd_oled1, oled2, fd_oled2)
+
+                # If we get here, the API call succeeded
+                api_call_fails = 0  # Reset the failure counter
+                retry_secs = config.BASE_API_UPDATE_INTERVAL  # Reset the retry delay
+
+                # Restore the displays
+                oled1.restore_buffer(oled1_before)
+                oled2.restore_buffer(oled2_before)
+                oled1.show()
+                oled2.show()
+
+                log_message(
+                    f"API request success. Next retry in {retry_secs} seconds.",
+                    level="INFO",
+                )
+            except (OSError, ValueError, TypeError, MemoryError) as e:
+                api_call_fails += 1
+                retry_secs = min(5 * 2 ** (api_call_fails - 1), 600)
+                log_message(
+                    f"API request fail: {e}. Next retry in {retry_secs} seconds.",
+                    level="ERROR",
+                )
 
     def parse_service(self, service):
         if not service:
@@ -280,14 +291,21 @@ async def main():
     log_message("\n\n[Program started]\n")
     log_message(f"Using API: {config.API_SOURCE}")
 
+    # Initiliase to None since not used?
+    oled1, oled2, fd_oled1, fd_oled2 = None, None, None, None
+
     if utils.is_wifi_connected():
         ntptime.settime()
         rail_data_instance = RailData()
 
         loop_counter = 0
 
-        await rail_data_instance.get_online_rail_data()
-        asyncio.create_task(rail_data_instance.cycle_get_online_rail_data())
+        await rail_data_instance.get_online_rail_data(oled1, fd_oled1, oled2, fd_oled2)
+        asyncio.create_task(
+            rail_data_instance.cycle_get_online_rail_data(
+                oled1, fd_oled1, oled2, fd_oled2
+            )
+        )
 
         while True:
             loop_counter += 1

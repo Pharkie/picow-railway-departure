@@ -13,6 +13,8 @@ import uasyncio as asyncio
 from micropython import const
 import config
 
+# from utils import log_message # Can't because circular import
+
 
 def display_init_message(oled1, oled2, fd_oled1, fd_oled2):
     screens = [(oled1, fd_oled1), (oled2, fd_oled2)]
@@ -285,13 +287,17 @@ async def display_clock(oled, fd_oled):
     time_format = "{:02d}:{:02d}:{:02d}"
     offline_string = "[offline]"
 
-    counter = 0
     while True:
         current_time = utime.localtime()
+        current_seconds = utime.time()
+
         # Clear where the time is displayed without clearing whole line to save time (?)
         oled.fill_rect(40, config.THIN_LINETHREE_Y, 80, config.THIN_LINE_HEIGHT, 0)
 
-        if config.OFFLINE_MODE and counter <= 2:
+        # offline_string_turn is true for 2 seconds every 15 seconds
+        offline_string_turn = config.OFFLINE_MODE and current_seconds % 15 < 2
+
+        if offline_string_turn:
             fd_oled.print_str(offline_string, 40, config.THIN_LINETHREE_Y)
         else:
             clock_string = time_format.format(
@@ -300,7 +306,6 @@ async def display_clock(oled, fd_oled):
             fd_oled.print_str(clock_string, 46, config.THIN_LINETHREE_Y)
 
         oled.show()
-        # Setting to 0.9 helps clock not skip seconds when device busy
         await asyncio.sleep(0.9)
 
 

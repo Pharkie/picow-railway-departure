@@ -19,6 +19,11 @@ def parse_url(url):
     return protocol, host, uri, query_string
 
 
+# OFFLINE_MODE = True  # Set to True to use sample_data.json instead of the live API.
+OFFLINE_MODE = False  # Comment out one or the other
+
+LOG_LEVEL = "DEBUG"  # Options: "INFO", "DEBUG", "ERROR".
+
 # Set to 'RailDataOrg' or 'AWS'. First uses LDWS API, second uses AWS API Gateway below.
 # API_SOURCE = 'RailDataOrg' # Comment out one or the other
 API_SOURCE = "AWS"  # Comment out one or the other
@@ -36,10 +41,7 @@ STATION_CRS = "PMW"  # Station's CRS code
 # return a filtered response via the Amazon API Gateway.
 RAILDATAORG_NUMBER_OF_SERVICES = const(6)
 
-# OFFLINE_MODE = True  # Set to True to use sample_data.json instead of the live API.
-OFFLINE_MODE = False  # Comment out one or the other
-
-OFFLINE_JSON_FILE = "sample_data_big.json"  # File to use for offline mode
+OFFLINE_JSON_FILE = "sample_data.json"  # File to use for offline mode
 
 # CUSTOM_TRAVEL_ALERT = "This is a 100 character long test travel alert for testing purposes. Please ignore. 12345"  # Set to None to disable
 
@@ -77,11 +79,7 @@ AWS_API_ID = host_parts[0]
 AWS_API_SERVICE = host_parts[1]
 AWS_API_REGION = host_parts[2]
 
-# Number of attempts to make to the API before giving up
-# Each attempt uses an exponential backoff calc to increase the time between attempts.
-MAX_API_ATTEMPTS = const(4)
-
-BASE_API_UPDATE_INTERVAL = const(60)  # Seconds
+BASE_API_UPDATE_INTERVAL = const(30)  # Seconds
 
 # OLED screen params (SSD1306)
 LINEONE_Y = const(0)

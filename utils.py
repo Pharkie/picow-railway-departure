@@ -15,39 +15,41 @@ import display_utils
 import os
 
 
-def log_message(log_message, level="INFO"):
-    max_log_size = 100 * 1024
-    max_log_files = 2
-    timestamp = utime.localtime(utime.time())
-    formatted_timestamp = (
-        f"{timestamp[0]:04d}-{timestamp[1]:02d}-{timestamp[2]:02d} "
-        + f"{timestamp[3]:02d}:{timestamp[4]:02d}:{timestamp[5]:02d}"
-    )
-    log_message = f"{formatted_timestamp} [{level}]: {log_message}\n"
+def log_message(message, level="INFO"):
+    levels = ["DEBUG", "INFO", "ERROR"]
+    if levels.index(level) >= levels.index(config.LOG_LEVEL):
+        max_log_size = 100 * 1024
+        max_log_files = 2
+        timestamp = utime.localtime(utime.time())
+        formatted_timestamp = (
+            f"{timestamp[0]:04d}-{timestamp[1]:02d}-{timestamp[2]:02d} "
+            + f"{timestamp[3]:02d}:{timestamp[4]:02d}:{timestamp[5]:02d}"
+        )
+        log_message = f"{formatted_timestamp} [{level}]: {message}\n"
 
-    print(log_message)
+        print(log_message)
 
-    log_filename = "rail_data_log.txt"
-    try:
-        if os.stat(log_filename)[6] > max_log_size:
-            # If the log file is too big, rotate it.
-            log_message += f"\nRotating log file {log_filename}. Max log size: {max_log_size} bytes, max rotated log files: {max_log_files}\n"
+        log_filename = "rail_data_log.txt"
+        try:
+            if os.stat(log_filename)[6] > max_log_size:
+                # If the log file is too big, rotate it.
+                log_message += f"\nRotating log file {log_filename}. Max log size: {max_log_size} bytes, max rotated log files: {max_log_files}\n"
 
-            try:
-                os.remove(f"{log_filename}.{max_log_files}")
-            except OSError:
-                pass
-            for i in range(max_log_files - 1, 0, -1):
                 try:
-                    os.rename(f"{log_filename}.{i}", f"{log_filename}.{i+1}")
+                    os.remove(f"{log_filename}.{max_log_files}")
                 except OSError:
                     pass
-            os.rename(log_filename, f"{log_filename}.1")
-    except OSError:
-        pass
+                for i in range(max_log_files - 1, 0, -1):
+                    try:
+                        os.rename(f"{log_filename}.{i}", f"{log_filename}.{i+1}")
+                    except OSError:
+                        pass
+                os.rename(log_filename, f"{log_filename}.1")
+        except OSError:
+            pass
 
-    with open(log_filename, "a") as log_file:
-        log_file.write(log_message)
+        with open(log_filename, "a") as log_file:
+            log_file.write(log_message)
 
 
 def connect_wifi(oled1=None, oled2=None, fd_oled1=None, fd_oled2=None):

@@ -205,7 +205,8 @@ async def main():
     if config.OFFLINE_MODE:
         rail_data_instance.get_offline_rail_data()
     else:
-        await rail_data_instance.get_online_rail_data()
+        # If this first API call fails, the program exits, since it has nothing to show.
+        await rail_data_instance.get_online_rail_data(oled1, fd_oled1, oled2, fd_oled2)
 
     asyncio.create_task(display_utils.display_clock(oled1, fd_oled1))
     if oled2:
@@ -213,7 +214,11 @@ async def main():
 
     # update_rail_data_task = asyncio.create_task(run_periodically(rail_data_instance.get_rail_data, 10)) # For testing
     if not config.OFFLINE_MODE:
-        asyncio.create_task(rail_data_instance.cycle_get_online_rail_data())
+        asyncio.create_task(
+            rail_data_instance.cycle_get_online_rail_data(
+                oled1, fd_oled1, oled2, fd_oled2
+            )
+        )
 
     asyncio.create_task(cycle_oled(oled1, fd_oled1, rail_data_instance, 1))
     if oled2:

@@ -38,6 +38,14 @@ class SSD1306(framebuf.FrameBuffer):
         super().__init__(self.buffer, self.width, self.height, framebuf.MONO_VLSB)
         self.init_display()
 
+    def save_buffer(self):
+        # Save a copy of the current buffer
+        return bytearray(self.buffer)
+
+    def restore_buffer(self, buffer_to_restore):
+        # Restore the buffer from the saved copy
+        self.buffer[:] = buffer_to_restore
+
     def init_display(self):
         for cmd in (
             SET_DISP | 0x00,  # off
