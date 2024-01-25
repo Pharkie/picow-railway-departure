@@ -93,7 +93,7 @@ class RailData:
         """
         self.get_rail_data_count += 1
         log_message(
-            f"get_offline_rail_data call {self.get_rail_data_count}. Free memory: {gc.mem_free()}",
+            f"get_offline_rail_data call {self.get_rail_data_count}. Free memory: {gc.mem_free()}",  # pylint: disable=no-member
             level="DEBUG",
         )
 
@@ -122,7 +122,7 @@ class RailData:
     async def get_online_rail_data(self, oled1, fd_oled1, oled2, fd_oled2):
         self.get_rail_data_count += 1
         log_message(
-            f"get_online_rail_data call {self.get_rail_data_count}. Free memory: {gc.mem_free()}",
+            f"get_online_rail_data call {self.get_rail_data_count}. Free memory: {gc.mem_free()}",  # pylint: disable=no-member
             level="DEBUG",
         )
 
@@ -144,7 +144,7 @@ class RailData:
         """
         Updates rail data from the API every BASE_API_UPDATE_INTERVAL seconds.
         Next call backs off on API failure. Delays between API calls (in seconds):
-        Retry wait in seconds: 5, 10, 20, 40, 80, 160, 320, 600 max.
+        Retry wait in seconds: 5, 10, 20, 40, 80, 160, 180 (3 mins) capped.
         """
         self.api_retry_secs = config.BASE_API_UPDATE_INTERVAL
 
@@ -179,7 +179,7 @@ class RailData:
                 )
             except (OSError, ValueError, TypeError, MemoryError) as e:
                 self.api_fails += 1
-                self.api_retry_secs = min(5 * 2 ** (self.api_fails - 1), 600)
+                self.api_retry_secs = min(5 * 2 ** (self.api_fails - 1), 180)
                 log_message(
                     f"API request fail: {e}. Next retry in {self.api_retry_secs} seconds.",
                     level="ERROR",
@@ -275,8 +275,9 @@ class RailData:
                 )
 
                 # Check if CUSTOM_TRAVEL_ALERT is defined in config.py
-                if getattr(config, "CUSTOM_TRAVEL_ALERT", None):
-                    self.nrcc_message = config.CUSTOM_TRAVEL_ALERT
+                custom_travel_alert = getattr(config, "CUSTOM_TRAVEL_ALERT", None)
+                if custom_travel_alert is not None:
+                    self.nrcc_message = custom_travel_alert
                 else:
                     if data_JSON.get("nrccMessages"):
                         self.nrcc_message = self.parse_nrcc_message(
@@ -313,7 +314,8 @@ async def main():
         while True:
             loop_counter += 1
             log_message(
-                f"Loop {loop_counter}. Free memory: {gc.mem_free()}", level="DEBUG"
+                f"Loop {loop_counter}. Free memory: {gc.mem_free()}",  # pylint: disable=no-member
+                level="DEBUG",
             )
 
             if loop_counter % 5 == 0:

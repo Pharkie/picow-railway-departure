@@ -7,12 +7,11 @@ Description: Utils that operate on datetime
 GitHub Repository: https://github.com/Pharkie/AdamGalactic/
 License: GNU General Public License (GPL)
 """
-import utime  # type: ignore
-import ntptime  # type: ignore
-import uasyncio as asyncio  # type: ignore
-import utils
-import machine  # type: ignore
 import random
+import utime
+import ntptime
+import machine
+import utils
 from config import OFFLINE_MODE
 
 
@@ -42,7 +41,8 @@ def last_sunday(year, month):
     # Calculate the date of the last Sunday of the specified month and year.
     # Find the date of the last Sunday in a given month
     last_day = (
-        utime.mktime((year, month + 1, 1, 0, 0, 0, 0, 0)) - 86400
+        utime.mktime((year, month + 1, 1, 0, 0, 0, 0, 0))
+        - 86400  # pylint: disable=no-value-for-parameter
     )  # Set to the last day of the previous month
     weekday = utime.localtime(last_day)[6]  # Get the weekday for the last day
 
@@ -130,7 +130,7 @@ async def sync_rtc():
         )
         rtc = machine.RTC()
         # Set the RTC to the random time
-        rtc.datetime((2023, 1, 1, 0, hours, minutes, seconds, 0))
+        machine.RTC().datetime((2023, 1, 1, 0, hours, minutes, seconds, 0))
     else:
         try:
             if not utils.is_wifi_connected():
@@ -146,9 +146,8 @@ async def sync_rtc():
             if is_DST_flag:
                 current_timestamp += 3600
 
-            rtc = machine.RTC()
             # rtc.datetime() param is a different format of tuple to utime.localtime() so below converts it
-            rtc.datetime(
+            machine.RTC().datetime(
                 (
                     utime.localtime(current_timestamp)[0],
                     utime.localtime(current_timestamp)[1],

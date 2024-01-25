@@ -38,6 +38,22 @@ This project uses a Raspberry Pi Pico with an OLED display to show departure boa
 
 2. Navigate to the project directory
 
+## AWS API intermediary
+
+Using an AWS intermediary between the Pico and the Rail Data API makes two big improvements:
+
+1. Unused keys in the JSON response are deleted, making for a much more compact response (1-5 kb rather than 30-80kb). This stops the Pico running out of memory trying to parse large API responses.
+2. The AWS code will retry the Rail Data API, if necessary, up to 3 times in 8 seconds. This covers over any occasional, temporary errors calling the Rail Data API and makes a more reliable experience for the Pico.
+
+## AWS Setup
+
+1. Paste the contents of "aws_lambda_function.py" into a Lambda function running Python.
+2. Set up an API Gateway endpoint to call the lambda function. Put the API URL into "config.py".
+3. Configure IAM credentials so the Lambda function is callable. Put the access_key and secret_access_key in "credential.py".
+4. Configure Cloudwatch Alarms on the logs or other metrics to email you about Errors (optional)
+
+If you want a video tutorial, let me know.
+
 ## Usage
 
 1. Run main.py
@@ -45,7 +61,6 @@ This project uses a Raspberry Pi Pico with an OLED display to show departure boa
 ## Known Issues
 
 * Clock may skip a second every now and then due to device being busy elsewhere.
-* Once a minute, display updates will slow or freeze for a couple seconds while fetching API updates.
 * The application doesn't handle DST change while the device is running, since it only checks at startup.
 * Large responses from Rail Data API likely to crash the system (use AWS API instead).
 

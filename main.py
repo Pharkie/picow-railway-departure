@@ -120,6 +120,8 @@ async def cycle_oled(oled, fd_oled, rail_data_instance, screen_number):
             # No point rerunning this code every 3 seconds, so every 30.
             await asyncio.sleep(27)
         else:
+            departures = None
+
             if screen_number == 1:
                 departures = rail_data_instance.oled1_departures
             elif screen_number == 2:
@@ -168,8 +170,8 @@ async def main():
     if not config.OFFLINE_MODE:
         log_message(f"Using API: {config.API_SOURCE}")
 
-    gc.threshold(
-        gc.mem_free() // 4 + gc.mem_alloc()
+    gc.threshold(  # pylint: disable=no-member
+        gc.mem_free() // 4 + gc.mem_alloc()  # pylint: disable=no-member
     )  # Set threshold for gc at 25% free memory
     gc.collect()
 
@@ -223,7 +225,9 @@ async def main():
     while True:
         loop_counter += 1
         gc.collect()
-        log_message(f"Main loop cycle {loop_counter}. Free memory: {gc.mem_free()}")
+        log_message(
+            f"Main loop cycle {loop_counter}. Free memory: {gc.mem_free()}"  # pylint: disable=no-member
+        )
         await asyncio.sleep(45)
 
 

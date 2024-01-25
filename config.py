@@ -1,7 +1,7 @@
 # Using const() to save memory wherever values will not change during execution (not needed for strings).
+import re
 from micropython import const
 from machine import Pin
-import re
 
 
 def parse_url(url):
@@ -74,6 +74,7 @@ AWS_API_PROTOCOL, AWS_API_HOST, AWS_API_URI, AWS_API_QUERYSTRING = parse_url(
     AWS_API_URL
 )
 
+# These four are calculated, no need to set.
 host_parts = AWS_API_HOST.split(".")
 AWS_API_ID = host_parts[0]
 AWS_API_SERVICE = host_parts[1]

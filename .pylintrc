@@ -1,0 +1,5 @@
+# A list of modules baked into the Micropython firmware such that Pylint can't know about them
+# but should not raise import errors for them.
+
+[MASTER]
+ignored-modules=utime,ntptime,machine,micropython,ujson
