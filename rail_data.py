@@ -57,14 +57,14 @@ class RailData:
 
             if not response:
                 log_message("No response from API", level="ERROR")
-                raise OSError("No response from API")
+                raise ConnectionError("No response from API")
 
             if response.status_code < 200 or response.status_code >= 300:
                 log_message(
                     f"HTTP request failed, status code {response.status_code}",
                     level="ERROR",
                 )
-                raise OSError(
+                raise ConnectionError(
                     f"HTTP request failed, status code {response.status_code}"
                 )
 
@@ -176,7 +176,7 @@ class RailData:
                     f"API request success. Next retry in {self.api_retry_secs} seconds.",
                     level="INFO",
                 )
-            except (OSError, ValueError, TypeError, MemoryError) as e:
+            except (ConnectionError, ValueError, TypeError, MemoryError) as e:
                 self.api_fails += 1
                 self.api_retry_secs = min(5 * 2 ** (self.api_fails - 1), 180)
                 log_message(

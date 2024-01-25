@@ -118,8 +118,7 @@ def get_time_values(current_time_tuple=None):
     )
 
 
-async def sync_rtc():
-    # Sync RTC to NTP, then add an hour if it's DST and update the RTC
+async def sync_rtc(sync_with_ntp=False):
     if OFFLINE_MODE:
         # Generate random values for hours, minutes, and seconds
         hours = random.randint(0, 23)
@@ -133,10 +132,10 @@ async def sync_rtc():
         machine.RTC().datetime((2023, 1, 1, 0, hours, minutes, seconds, 0))
     else:
         try:
-            if not utils.is_wifi_connected():
-                raise Exception("Wifi not connected")
-
-            ntptime.settime()
+            if sync_with_ntp:
+                if not utils.is_wifi_connected():
+                    raise ConnectionError("Wifi not connected")
+                ntptime.settime()
 
             # Work out if we're in DST and if so, add an hour to the RTC
             current_timestamp = utime.time()
@@ -159,6 +158,10 @@ async def sync_rtc():
                     0,
                 )
             )
-            utils.log_message(f"RTC time set from NTP with DST: {is_DST_flag}\n")
+            utils.log_message(
+                f"RTC time set {'from NTP' if sync_with_ntp else 'locally'} with DST: {is_DST_flag}\n"
+            )
         except Exception as e:
-            utils.log_message(f"Failed to set RTC from NTP: {e}")
+            utils.log_message(
+                f"Failed to set RTC {'from NTP' if sync_with_ntp else 'locally'}: {e}"
+            )

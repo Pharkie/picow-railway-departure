@@ -370,16 +370,14 @@ async def display_travel_alert(oled, alert_message):
 
 
 async def scroll_text(oled, text, y):
+    # print(f"scroll_text() called with text: {text}")
     text_width = len(text) * config.THICK_CHAR_WIDTH
-    FRAME_DELAY = 0.1
-    STEP_SIZE = 6
+    FRAME_DELAY = 0.1  # Going under this causes problems
+    STEP_SIZE = 6  # Smoother scrolling takes too much CPU
 
-    # Draw the text off the right edge of the screen
-    oled.text(text, config.DISPLAY_WIDTH, y)
-
-    for _ in range(config.DISPLAY_WIDTH, -(text_width + STEP_SIZE), -STEP_SIZE):
-        # Scroll the frame buffer to the left
-        oled.framebuf.scroll(-STEP_SIZE, 0)
+    for x in range(config.DISPLAY_WIDTH, -(text_width + STEP_SIZE), -STEP_SIZE):
+        clear_line(oled, y)
+        oled.text(text, x, y)
         oled.show()
 
-        await asyncio.sleep(FRAME_DELAY)
+        await asyncio.sleep(FRAME_DELAY)  # Delay between frames

@@ -10,6 +10,7 @@ License: GNU General Public License (GPL)
 import os
 import network
 import utime
+import asyncio
 import credentials
 import config
 import display_utils
@@ -50,6 +51,12 @@ def log_message(message, level="INFO"):
 
         with open(log_filename, "a") as log_file:
             log_file.write(log_message)
+
+
+async def run_periodically(function, seconds):
+    while True:
+        await function()
+        await asyncio.sleep(seconds)
 
 
 def connect_wifi(oled1=None, oled2=None):
