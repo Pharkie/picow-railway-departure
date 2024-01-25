@@ -106,25 +106,34 @@ async def cycle_oled(oled, fd_oled, rail_data_instance, screen_number):
     If there is a travel alert, it displays the alert.
     """
     while True:
-        if screen_number == 1:
-            departures = rail_data_instance.oled1_departures
-        elif screen_number == 2:
-            departures = rail_data_instance.oled2_departures
-
-        if departures:
-            await display_utils.display_first_departure(oled, fd_oled, departures[0])
-
-            if len(departures) > 1:
-                await display_utils.display_second_departure(
-                    oled, fd_oled, departures[1]
-                )
+        if rail_data_instance.api_fails > 2:
+            display_utils.clear_line(oled, config.LINEONE_Y)
+            display_utils.clear_line(oled, config.THICK_LINETWO_Y)
+            fd_oled.print_str("Info out of date", 0, config.LINEONE_Y)
+            fd_oled.print_str("Please wait for retry", 0, config.THIN_LINETWO_Y)
+            oled.show()
         else:
-            await display_utils.display_no_departures(oled, fd_oled)
+            if screen_number == 1:
+                departures = rail_data_instance.oled1_departures
+            elif screen_number == 2:
+                departures = rail_data_instance.oled2_departures
 
-        if rail_data_instance.nrcc_message:
-            await display_utils.display_travel_alert(
-                oled, fd_oled, rail_data_instance.nrcc_message
-            )
+            if departures:
+                await display_utils.display_first_departure(
+                    oled, fd_oled, departures[0]
+                )
+
+                if len(departures) > 1:
+                    await display_utils.display_second_departure(
+                        oled, fd_oled, departures[1]
+                    )
+            else:
+                await display_utils.display_no_departures(oled, fd_oled)
+
+            if rail_data_instance.nrcc_message:
+                await display_utils.display_travel_alert(
+                    oled, fd_oled, rail_data_instance.nrcc_message
+                )
 
         await asyncio.sleep(3)
 

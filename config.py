@@ -79,7 +79,7 @@ AWS_API_ID = host_parts[0]
 AWS_API_SERVICE = host_parts[1]
 AWS_API_REGION = host_parts[2]
 
-BASE_API_UPDATE_INTERVAL = const(30)  # Seconds
+BASE_API_UPDATE_INTERVAL = const(60)  # Seconds
 
 # OLED screen params (SSD1306)
 LINEONE_Y = const(0)

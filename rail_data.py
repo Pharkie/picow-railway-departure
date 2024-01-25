@@ -17,6 +17,7 @@ class RailData:
         self.oled1_departures = []
         self.oled2_departures = []
         self.get_rail_data_count = 0
+        self.api_fails = 0
 
     async def fetch_data_from_api(self, oled1, fd_oled1, oled2, fd_oled2):
         assert utils.is_wifi_connected(), "Wifi not connected"
@@ -145,7 +146,6 @@ class RailData:
         Retry wait in seconds: 5, 10, 20, 40, 80, 160, 320, 600 max.
         """
         retry_secs = config.BASE_API_UPDATE_INTERVAL
-        api_call_fails = 0
 
         while True:
             await asyncio.sleep(retry_secs)
@@ -161,7 +161,7 @@ class RailData:
                 await self.get_online_rail_data(oled1, fd_oled1, oled2, fd_oled2)
 
                 # If we get here, the API call succeeded
-                api_call_fails = 0  # Reset the failure counter
+                self.api_fails = 0  # Reset the failure counter
                 retry_secs = config.BASE_API_UPDATE_INTERVAL  # Reset the retry delay
 
                 # Restore the displays
@@ -175,8 +175,8 @@ class RailData:
                     level="INFO",
                 )
             except (OSError, ValueError, TypeError, MemoryError) as e:
-                api_call_fails += 1
-                retry_secs = min(5 * 2 ** (api_call_fails - 1), 600)
+                self.api_fails += 1
+                retry_secs = min(5 * 2 ** (self.api_fails - 1), 600)
                 log_message(
                     f"API request fail: {e}. Next retry in {retry_secs} seconds.",
                     level="ERROR",
