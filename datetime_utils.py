@@ -136,6 +136,10 @@ async def sync_rtc(sync_with_ntp=False):
                 if not utils.is_wifi_connected():
                     raise OSError("Wifi not connected")
                 ntptime.settime()
+                utils.log_message(
+                    f"RTC time updated from NTP",
+                    level="INFO",
+                )
 
                 # Get the current time from utime
                 current_timestamp = utime.time()
@@ -181,12 +185,12 @@ async def sync_rtc(sync_with_ntp=False):
                         )
                     )
                     utils.log_message(
-                        f"RTC time updated {'from NTP' if sync_with_ntp else 'without NTP'} with DST: {is_DST_flag}",
+                        f"RTC time updated for DST: {is_DST_flag}",
                         level="INFO",
                     )
                 else:
                     utils.log_message(
-                        f"RTC time not updated, no DST change from: {is_DST_flag}",
+                        f"RTC time not updated for DST, no change from: {is_DST_flag}",
                         level="DEBUG",
                     )
         except Exception as e:
