@@ -127,40 +127,68 @@ async def sync_rtc(sync_with_ntp=False):
         utils.log_message(
             f"Offline mode: setting a random time {hours:02d}:{minutes:02d}:{seconds:02d}"
         )
-        rtc = machine.RTC()
+
         # Set the RTC to the random time
         machine.RTC().datetime((2023, 1, 1, 0, hours, minutes, seconds, 0))
     else:
         try:
             if sync_with_ntp:
                 if not utils.is_wifi_connected():
-                    raise ConnectionError("Wifi not connected")
+                    raise OSError("Wifi not connected")
                 ntptime.settime()
 
-            # Work out if we're in DST and if so, add an hour to the RTC
-            current_timestamp = utime.time()
+                # Get the current time from utime
+                current_timestamp = utime.time()
+                # Get the current time from the RTC
+                rtc_timestamp = machine.RTC().datetime()
 
-            is_DST_flag = is_DST(current_timestamp)
-
-            if is_DST_flag:
-                current_timestamp += 3600
-
-            # rtc.datetime() param is a different format of tuple to utime.localtime() so below converts it
-            machine.RTC().datetime(
-                (
-                    utime.localtime(current_timestamp)[0],
-                    utime.localtime(current_timestamp)[1],
-                    utime.localtime(current_timestamp)[2],
-                    utime.localtime(current_timestamp)[6],
-                    utime.localtime(current_timestamp)[3],
-                    utime.localtime(current_timestamp)[4],
-                    utime.localtime(current_timestamp)[5],
+                # Rearrange the rtc_timestamp to match the format expected by utime.mktime()
+                rtc_timestamp_rearranged = (
+                    rtc_timestamp[0],
+                    rtc_timestamp[1],
+                    rtc_timestamp[2],
+                    rtc_timestamp[4],
+                    rtc_timestamp[5],
+                    rtc_timestamp[6],
+                    rtc_timestamp[3],
                     0,
                 )
-            )
-            utils.log_message(
-                f"RTC time set {'from NTP' if sync_with_ntp else 'locally'} with DST: {is_DST_flag}\n"
-            )
+
+                # Convert the RTC timestamp to seconds since the Epoch
+                rtc_timestamp_seconds = utime.mktime(rtc_timestamp_rearranged)
+
+                # Check if DST is in effect
+                is_DST_flag = is_DST(current_timestamp)
+
+                # If DST is in effect, add an hour to the current timestamp
+                if is_DST_flag:
+                    current_timestamp += 3600
+
+                # If the current timestamp and the RTC timestamp differ by more than a minute,
+                # update the RTC
+                if abs(current_timestamp - rtc_timestamp_seconds) > 60:
+                    # rtc.datetime() param is a different format of tuple to utime.localtime() so below converts it
+                    machine.RTC().datetime(
+                        (
+                            utime.localtime(current_timestamp)[0],
+                            utime.localtime(current_timestamp)[1],
+                            utime.localtime(current_timestamp)[2],
+                            utime.localtime(current_timestamp)[6],
+                            utime.localtime(current_timestamp)[3],
+                            utime.localtime(current_timestamp)[4],
+                            utime.localtime(current_timestamp)[5],
+                            0,
+                        )
+                    )
+                    utils.log_message(
+                        f"RTC time updated {'from NTP' if sync_with_ntp else 'without NTP'} with DST: {is_DST_flag}",
+                        level="INFO",
+                    )
+                else:
+                    utils.log_message(
+                        f"RTC time not updated, no DST change from: {is_DST_flag}",
+                        level="DEBUG",
+                    )
         except Exception as e:
             utils.log_message(
                 f"Failed to set RTC {'from NTP' if sync_with_ntp else 'locally'}: {e}"
