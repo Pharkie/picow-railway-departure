@@ -177,6 +177,10 @@ async def main():
     # log("main() called")
     oled1, oled2 = setup_displays()
 
+    if oled1 is None:
+        log_message("Need oled on oled1, didn't find.", level="ERROR")
+        raise RuntimeError("Need oled on oled1, didn't find.")
+
     display_utils.display_init_message(oled1, oled2)
     utime.sleep(2)
 

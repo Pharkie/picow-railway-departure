@@ -48,10 +48,10 @@ FONTDRAWER_FONT_NAME = "dejav_m10"  # Font to use for drawing text on the OLEDs
 # CUSTOM_TRAVEL_ALERT = "This is a 100 character long test travel alert for testing purposes. Please ignore. 12345"  # Set to None to disable
 
 # I2C pins for OLED screens
-OLED1_SCL_PIN = Pin(17)
-OLED1_SDA_PIN = Pin(16)
-OLED2_SCL_PIN = Pin(19)
-OLED2_SDA_PIN = Pin(18)
+OLED1_SCL_PIN = Pin(17)  # Blue
+OLED1_SDA_PIN = Pin(16)  # Green
+OLED2_SCL_PIN = Pin(19)  # Blue
+OLED2_SDA_PIN = Pin(18)  # Green
 
 RAILDATAORG_API_URL = (  # National Rail API URL. On two lines for readability.
     "https://api1.raildata.org.uk"

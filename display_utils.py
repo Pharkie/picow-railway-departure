@@ -29,11 +29,14 @@ def display_init_message_1screen(oled, screen_number, total_screens):
 
 
 def display_init_message(oled1, oled2):
-    screens = [oled for oled in (oled1, oled2) if oled is not None]
-    total_screens = len(screens)
+    if not oled1:
+        raise RuntimeError("oled1 not available")
 
-    for screen_number, oled in enumerate(screens, start=1):
-        display_init_message_1screen(oled, screen_number, total_screens)
+    total_screens = 1 if not oled2 else 2
+
+    for screen_number, oled in enumerate((oled1, oled2), start=1):
+        if oled:
+            display_init_message_1screen(oled, screen_number, total_screens)
 
 
 async def display_departure_line(
