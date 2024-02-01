@@ -60,74 +60,73 @@ async def run_periodically(function, seconds):
 
 
 def connect_wifi(oled1=None, oled2=None):
-    # log("connect_wifi() called")
-    global offline_mode
+    try:
+        # log("connect_wifi() called")
+        wlan = network.WLAN(network.STA_IF)
+        wlan.active(False)
+        wlan.active(True)
+        wlan.connect(credentials.WIFI_SSID, credentials.WIFI_PASSWORD)
 
-    wlan = network.WLAN(network.STA_IF)
+        max_wait = waited = config.WIFI_TIMEOUT
+        while waited > 0:
+            if wlan.isconnected():
+                log_message("Wifi connected")
+                display_utils.both_screen_text(
+                    oled1,
+                    oled2,
+                    "Wifi connected",
+                    config.LINEONE_Y,
+                    ":)",
+                    config.THIN_LINETWO_Y,
+                )
+                utime.sleep(1)
+                # Clear screens but don't update display
+                if oled1:
+                    oled1.fill(0)
+                if oled2:
+                    oled2.fill(0)
+                break
+            elif wlan.status() in [
+                network.STAT_WRONG_PASSWORD,
+                network.STAT_NO_AP_FOUND,
+                network.STAT_CONNECT_FAIL,
+            ]:
+                break  # Connection failed, no benefit to wait or retry
 
-    # # Deactivate and then reactivate the WiFi interface for a complete reset
-    # wlan.active(False)
-    # utime.sleep(1)  # Wait a bit for the interface to deactivate
-    # wlan.active(True)
-    # utime.sleep(1)  # Wait a bit for the interface to activate
+            log_message(
+                f"Waiting for Wifi to connect {max_wait + 1 - waited}/{max_wait}"
+            )
+            display_utils.both_screen_text(
+                oled1,
+                oled2,
+                "Connecting wifi",
+                config.LINEONE_Y,
+                f"{max_wait + 1 - waited}/{max_wait}",
+                config.THIN_LINETWO_Y,
+            )
+            waited -= 1
+            utime.sleep(1)
 
-    # # Reset connection
-    # if is_wifi_connected():
-    #     disconnect_wifi()
-
-    wlan.active(True)
-    # wlan.config(pm=wlan.PM_NONE)
-    # wlan.config(txpower=18)
-    # wlan.config(pm=0xa11140)
-    wlan.connect(credentials.WIFI_SSID, credentials.WIFI_PASSWORD)
-
-    max_wait = waited = config.WIFI_TIMEOUT
-    while waited > 0:
-        if wlan.status() < 0 or wlan.status() >= 3:
-            break
-        log_message(f"Waiting for Wifi to connect {max_wait + 1 - waited}/{max_wait}")
-        display_utils.both_screen_text(
-            oled1,
-            oled2,
-            "Connecting wifi",
-            config.LINEONE_Y,
-            f"{max_wait + 1 - waited}/{max_wait}",
-            config.THIN_LINETWO_Y,
-        )
-        waited -= 1
-        utime.sleep(1)
-
-    if network.WLAN(network.STA_IF).isconnected():
-        log_message("Wifi connected")
-        display_utils.both_screen_text(
-            oled1,
-            oled2,
-            "Wifi connected",
-            config.LINEONE_Y,
-            ":)",
-            config.THIN_LINETWO_Y,
-        )
-
-        utime.sleep(1)
-        # Clear screens after (but don't update display)
-        if oled1:
-            oled1.fill(0)
-        if oled2:
-            oled2.fill(0)
-    else:
-        log_message("Wifi not connected: timed out")
-        display_utils.both_screen_text(
-            oled1,
-            oled2,
-            "Config = online",
-            config.LINEONE_Y,
-            "But no wifi :(",
-            config.THIN_LINETWO_Y,
-            "Stopping.",
-            config.THIN_LINETHREE_Y,
-        )
-
-        raise OSError("Wifi not connected: timed out")
+        if not wlan.isconnected():
+            log_message(
+                f"Wifi not connected: timed out. wlan.status: {wlan.status()}", "ERROR"
+            )
+            display_utils.both_screen_text(
+                oled1,
+                oled2,
+                "Config = online",
+                config.LINEONE_Y,
+                "But no wifi :(",
+                config.THIN_LINETWO_Y,
+                "Stopping.",
+                config.THIN_LINETHREE_Y,
+            )
+            raise OSError(
+                f"Wifi not connected, timed out. wlan.status: {wlan.status()}"
+            )
+    except Exception as e:
+        log_message(f"Exception while connecting WiFi: {e}", "ERROR")
+        raise
 
 
 def is_wifi_connected():
