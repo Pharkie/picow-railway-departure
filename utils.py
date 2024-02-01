@@ -107,6 +107,13 @@ def connect_wifi(oled1=None, oled2=None):
             ":)",
             config.THIN_LINETWO_Y,
         )
+
+        utime.sleep(1)
+        # Clear screens after (but don't update display)
+        if oled1:
+            oled1.fill(0)
+        if oled2:
+            oled2.fill(0)
     else:
         log_message("Wifi not connected: timed out")
         display_utils.both_screen_text(
@@ -120,12 +127,7 @@ def connect_wifi(oled1=None, oled2=None):
             config.THIN_LINETHREE_Y,
         )
 
-    utime.sleep(1)
-    # Clear screens after (but don't update display)
-    if oled1:
-        oled1.fill(0)
-    if oled2:
-        oled2.fill(0)
+        raise OSError("Wifi not connected: timed out")
 
 
 def is_wifi_connected():
