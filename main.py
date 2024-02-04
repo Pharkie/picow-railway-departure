@@ -235,9 +235,10 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         log_message("[Program exiting cleanly] Keyboard Interrupt")
     except Exception as e:
-        log_message(f"Main program Exception: {str(e)}", level="ERROR")
+        log_message(
+            f"Unrecoverable error. Rebooting automatically. Info: {str(e)}",
+            level="ERROR",
+        )
+        machine.reset()  # Helpful?
     finally:
         asyncio.new_event_loop()  # Clear retained state
-
-        log_message("Unrecoverable error. Rebooting automatically.", level="ERROR")
-        machine.reset()

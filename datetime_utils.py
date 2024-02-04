@@ -193,9 +193,7 @@ async def check_DST():
         else:
             utils.log_message(
                 f"RTC time not updated for DST, no change from: {is_DST_flag}",
-                level="DEBUG",
+                level="INFO",
             )
     except Exception as e:
-        utils.log_message(
-            f"Failed to set RTC {'from NTP' if sync_with_ntp else 'locally'}: {e}"
-        )
+        utils.log_message(f"Failed to check DST: {e}")

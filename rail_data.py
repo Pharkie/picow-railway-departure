@@ -61,11 +61,11 @@ class RailData:
 
             if response.status_code < 200 or response.status_code >= 300:
                 log_message(
-                    f"HTTP request failed, status code {response.status_code}",
+                    f"HTTP request failed. Status code {response.status_code}. Contents: {response.text[:200]}",
                     level="ERROR",
                 )
                 raise OSError(
-                    f"HTTP request failed, status code {response.status_code}"
+                    f"HTTP request failed. Status code {response.status_code}. Contents: {response.text[:200]}"
                 )
 
             # Log the size of the response data in KB, rounded to 2 decimal places
@@ -191,9 +191,11 @@ class RailData:
         subsequentCallingPoints = [
             (
                 calling_point.get("locationName"),
-                calling_point.get("et")
-                if calling_point.get("et") != "On time"
-                else calling_point.get("st"),
+                (
+                    calling_point.get("et")
+                    if calling_point.get("et") != "On time"
+                    else calling_point.get("st")
+                ),
             )
             for subsequent_calling_point in service.get("subsequentCallingPoints", [])
             for calling_point in subsequent_calling_point.get("callingPoint", [])
