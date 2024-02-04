@@ -28,7 +28,7 @@ LOG_LEVEL = "INFO"  # Options: "INFO", "DEBUG", "ERROR".
 # API_SOURCE = 'RailDataOrg' # Comment out one or the other
 API_SOURCE = "AWS"  # Comment out one or the other
 
-STATION_CRS = "PEN"  # Station's CRS code
+STATION_CRS = "PMW"  # Station's CRS code
 
 # Number of services to request (0-10) from Rail Data API
 # The risk is that services for the requested platform(s) may not appear in the first X results.

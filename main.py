@@ -207,8 +207,14 @@ async def main():
     if config.OFFLINE_MODE:
         rail_data_instance.get_offline_rail_data()
     else:
-        # If this first API call fails, the program exits, since it has nothing to show.
-        await rail_data_instance.get_online_rail_data(oled1, oled2)
+        try:
+            # If this first API call fails, the program exits, since it has nothing to show.
+            await rail_data_instance.get_online_rail_data(oled1, oled2)
+        except (OSError, ValueError, TypeError, MemoryError) as caught_error:
+            log_message(
+                f"First API call failed. Exiting program: {caught_error}", level="ERROR"
+            )
+            raise
         asyncio.create_task(rail_data_instance.cycle_get_online_rail_data(oled1, oled2))
 
     asyncio.create_task(cycle_oled(oled1, rail_data_instance, 1))
@@ -216,7 +222,7 @@ async def main():
         asyncio.create_task(cycle_oled(oled2, rail_data_instance, 2))
 
     # Check if DST, every 60 seconds
-    asyncio.create_task(utils.run_periodically(lambda: datetime_utils.check_DST(), 60))
+    asyncio.create_task(utils.run_periodically(datetime_utils.check_DST, 60))
 
     # Run the above tasks until Exception or KeyboardInterrupt
     loop_counter = 0
