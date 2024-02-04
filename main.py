@@ -231,7 +231,7 @@ async def main():
         try:
             # If this first API call fails, the program exits, since it has nothing to show.
             await rail_data_instance.get_online_rail_data(oled1, oled2)
-        except (OSError, ValueError, TypeError, MemoryError) as caught_error:
+        except (IOError, OSError, ValueError, TypeError, MemoryError) as caught_error:
             log_message(
                 f"First API call failed. Exiting program: {caught_error}",
                 level="ERROR",
