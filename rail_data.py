@@ -70,14 +70,12 @@ class RailData:
         the JSON data.
 
         Raises:
-        AssertionError: If the wifi is not connected.
-        OSError: If there is no response from the API or if the response status code is not in the
-        range 200-299.
+        OSError: If wifi is not connected, there is no response from the API or 
+        if the response status code is not in the range 200-299.
 
         Returns:
         dict: A dictionary representing the JSON data from the API response.
-        """
-        assert utils.is_wifi_connected(), "Wifi not connected"
+        """   
         rail_data_headers = {"x-apikey": credentials.RAILDATAORG_API_KEY}
 
         response = None
@@ -86,6 +84,9 @@ class RailData:
             gc.collect()
 
             log_message("Calling API", level="DEBUG")
+
+            if not utils.is_wifi_connected():
+                raise OSError("Wifi not connected")
 
             if config.API_SOURCE == "RailDataOrg":
                 rail_data_url = (
@@ -433,7 +434,7 @@ class RailData:
 
 async def main():
     """
-    The main entry point of the program.
+    Test this module.
 
     This method connects to the wifi, sets the time, creates an instance of RailData,
     and starts the cycle of getting online rail data. It also logs the loop count and
@@ -451,7 +452,7 @@ async def main():
     log_message("\n\n[Program started]\n")
     log_message(f"Using API: {config.API_SOURCE}")
 
-    # Initiliase to None since not used?
+    # Initiliase to None since not used? No, this need to be set.
     oled1, oled2 = None, None
 
     if utils.is_wifi_connected():

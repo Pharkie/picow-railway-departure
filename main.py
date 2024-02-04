@@ -53,8 +53,8 @@ def set_global_exception():
     def handle_exception(loop, context): # pylint: disable=unused-argument
         exception = context.get('exception')
         log_message(
-            f"Exiting. Caught unhandled global exception: {context['message']}, "
-            f"Type: {type(exception).__name__}, "
+            f"Exiting. Caught unhandled global exception: {context['message']}, " +
+            f"Type: {type(exception).__name__}, " +
             f"Details: {str(exception)}", 
             level="ERROR"
         )
