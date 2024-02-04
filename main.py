@@ -11,9 +11,12 @@ License: GNU General Public License (GPL)
 Known issues: doesn't handle DST change while device is running, since only checks at startup.
 
 """
+
 import asyncio
 import sys
+
 from machine import I2C
+import machine
 import uasyncio as asyncio
 import utime
 import datetime_utils
@@ -29,8 +32,8 @@ from utils import log_message
 
 def set_global_exception():
     def handle_exception(loop, context):
-        log_message(f"Caught global exception: {context['message']}")
-        log_message(str(context["exception"]))
+        log_message(f"Caught global exception: {context['message']}", level="ERROR")
+        log_message(str(context["exception"]), level="ERROR")
         sys.exit()
 
     loop = asyncio.get_event_loop()
@@ -194,29 +197,26 @@ async def main():
     rail_data_instance = rail_data.RailData()
 
     # At startup, run initial data gathering and wait
-    if config.OFFLINE_MODE:
-        await datetime_utils.sync_rtc(sync_with_ntp=False)
-        rail_data_instance.get_offline_rail_data()
-    else:
-        await datetime_utils.sync_rtc(sync_with_ntp=True)
-        # If this first API call fails, the program exits, since it has nothing to show.
-        await rail_data_instance.get_online_rail_data(oled1, oled2)
+    # Sync the RTC with NTP or set a random time if in offline mode
+    datetime_utils.sync_NTP()
 
     asyncio.create_task(display_utils.display_clock(oled1))
     if oled2:
         asyncio.create_task(display_utils.display_clock(oled2))
 
-    if not config.OFFLINE_MODE:
+    if config.OFFLINE_MODE:
+        rail_data_instance.get_offline_rail_data()
+    else:
+        # If this first API call fails, the program exits, since it has nothing to show.
+        await rail_data_instance.get_online_rail_data(oled1, oled2)
         asyncio.create_task(rail_data_instance.cycle_get_online_rail_data(oled1, oled2))
 
     asyncio.create_task(cycle_oled(oled1, rail_data_instance, 1))
     if oled2:
         asyncio.create_task(cycle_oled(oled2, rail_data_instance, 2))
 
-    # Check if DST needs to be applied, every 60 seconds
-    asyncio.create_task(
-        utils.run_periodically(lambda: datetime_utils.sync_rtc(sync_with_ntp=False), 60)
-    )
+    # Check if DST, every 60 seconds
+    asyncio.create_task(utils.run_periodically(lambda: datetime_utils.check_DST(), 60))
 
     # Run the above tasks until Exception or KeyboardInterrupt
     loop_counter = 0
@@ -234,5 +234,10 @@ if __name__ == "__main__":
         asyncio.run(main())
     except KeyboardInterrupt:
         log_message("[Program exiting cleanly] Keyboard Interrupt")
+    except Exception as e:
+        log_message(f"Main program Exception: {str(e)}", level="ERROR")
     finally:
         asyncio.new_event_loop()  # Clear retained state
+
+        log_message("Unrecoverable error. Rebooting automatically.", level="ERROR")
+        machine.reset()

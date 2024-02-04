@@ -7,6 +7,7 @@ Description: Utils that operate on datetime
 GitHub Repository: https://github.com/Pharkie/AdamGalactic/
 License: GNU General Public License (GPL)
 """
+
 import random
 import utime
 import ntptime
@@ -118,7 +119,7 @@ def get_time_values(current_time_tuple=None):
     )
 
 
-async def sync_rtc(sync_with_ntp=False):
+def sync_NTP():
     if OFFLINE_MODE:
         # Generate random values for hours, minutes, and seconds
         hours = random.randint(0, 23)
@@ -130,70 +131,71 @@ async def sync_rtc(sync_with_ntp=False):
 
         # Set the RTC to the random time
         machine.RTC().datetime((2023, 1, 1, 0, hours, minutes, seconds, 0))
-    else:
-        try:
-            if sync_with_ntp:
-                if not utils.is_wifi_connected():
-                    raise OSError("Wifi not connected")
-                ntptime.settime()
-                utils.log_message(
-                    f"RTC time updated from NTP",
-                    level="INFO",
-                )
+    elif not utils.is_wifi_connected():
+        raise OSError("Wifi not connected")
 
-                # Get the current time from utime
-                current_timestamp = utime.time()
-                # Get the current time from the RTC
-                rtc_timestamp = machine.RTC().datetime()
+    try:
+        ntptime.settime()
+        utils.log_message("RTC set from NTP", level="INFO")
+    except Exception as e:
+        utils.log_message(f"Failed to set RTC from NTP: {e}", level="ERROR")
 
-                # Rearrange the rtc_timestamp to match the format expected by utime.mktime()
-                rtc_timestamp_rearranged = (
-                    rtc_timestamp[0],
-                    rtc_timestamp[1],
-                    rtc_timestamp[2],
-                    rtc_timestamp[4],
-                    rtc_timestamp[5],
-                    rtc_timestamp[6],
-                    rtc_timestamp[3],
+
+async def check_DST():
+    try:
+        # Get the current time from utime
+        current_timestamp = utime.time()
+        # Get the current time from the RTC
+        rtc_timestamp = machine.RTC().datetime()
+
+        # Rearrange the rtc_timestamp to match the format expected by utime.mktime()
+        rtc_timestamp_rearranged = (
+            rtc_timestamp[0],
+            rtc_timestamp[1],
+            rtc_timestamp[2],
+            rtc_timestamp[4],
+            rtc_timestamp[5],
+            rtc_timestamp[6],
+            rtc_timestamp[3],
+            0,
+        )
+
+        # Convert the RTC timestamp to seconds since the Epoch
+        rtc_timestamp_seconds = utime.mktime(rtc_timestamp_rearranged)
+
+        # Check if DST is in effect
+        is_DST_flag = is_DST(current_timestamp)
+
+        # If DST is in effect, add an hour to the current timestamp
+        if is_DST_flag:
+            current_timestamp += 3600
+
+        # If the current timestamp and the RTC timestamp differ by more than a minute,
+        # update the RTC
+        if abs(current_timestamp - rtc_timestamp_seconds) > 60:
+            # rtc.datetime() param is a different format of tuple to utime.localtime() so below converts it
+            machine.RTC().datetime(
+                (
+                    utime.localtime(current_timestamp)[0],
+                    utime.localtime(current_timestamp)[1],
+                    utime.localtime(current_timestamp)[2],
+                    utime.localtime(current_timestamp)[6],
+                    utime.localtime(current_timestamp)[3],
+                    utime.localtime(current_timestamp)[4],
+                    utime.localtime(current_timestamp)[5],
                     0,
                 )
-
-                # Convert the RTC timestamp to seconds since the Epoch
-                rtc_timestamp_seconds = utime.mktime(rtc_timestamp_rearranged)
-
-                # Check if DST is in effect
-                is_DST_flag = is_DST(current_timestamp)
-
-                # If DST is in effect, add an hour to the current timestamp
-                if is_DST_flag:
-                    current_timestamp += 3600
-
-                # If the current timestamp and the RTC timestamp differ by more than a minute,
-                # update the RTC
-                if abs(current_timestamp - rtc_timestamp_seconds) > 60:
-                    # rtc.datetime() param is a different format of tuple to utime.localtime() so below converts it
-                    machine.RTC().datetime(
-                        (
-                            utime.localtime(current_timestamp)[0],
-                            utime.localtime(current_timestamp)[1],
-                            utime.localtime(current_timestamp)[2],
-                            utime.localtime(current_timestamp)[6],
-                            utime.localtime(current_timestamp)[3],
-                            utime.localtime(current_timestamp)[4],
-                            utime.localtime(current_timestamp)[5],
-                            0,
-                        )
-                    )
-                    utils.log_message(
-                        f"RTC time updated for DST: {is_DST_flag}",
-                        level="INFO",
-                    )
-                else:
-                    utils.log_message(
-                        f"RTC time not updated for DST, no change from: {is_DST_flag}",
-                        level="DEBUG",
-                    )
-        except Exception as e:
-            utils.log_message(
-                f"Failed to set RTC {'from NTP' if sync_with_ntp else 'locally'}: {e}"
             )
+            utils.log_message(
+                f"RTC time updated for DST: {is_DST_flag}",
+                level="INFO",
+            )
+        else:
+            utils.log_message(
+                f"RTC time not updated for DST, no change from: {is_DST_flag}",
+                level="DEBUG",
+            )
+    except Exception as e:
+        utils.log_message(
+            f"Failed to set RTC {'from NTP' if sync_with_ntp else 'locally'}: {e}"
+        )
