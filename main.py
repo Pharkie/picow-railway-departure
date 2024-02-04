@@ -121,7 +121,6 @@ async def cycle_oled(oled, rail_data_instance, screen_number):
 
     Parameters:
     oled: An OLED display object.
-    fd_oled: A Fontdrawer object for the OLED display.
     rail_data_instance: An instance of the RailData class that provides the departure information.
     screen_number: The number of the screen (1 or 2).
 

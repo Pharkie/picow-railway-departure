@@ -301,7 +301,7 @@ class RailData:
                 self.api_fails += 1
                 self.api_retry_secs = min(5 * 2 ** (self.api_fails - 1), 180)
                 log_message(
-                    f"API request fail #{self.api_fails}: {e}. "
+                    f"API request fail #{self.api_fails}: {e}. " +
                     f"Next retry in {self.api_retry_secs} seconds.",
                     level="ERROR",
                 )
