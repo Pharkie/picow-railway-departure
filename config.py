@@ -22,28 +22,22 @@ def parse_url(url):
 # OFFLINE_MODE = True  # Set to True to use sample_data.json instead of the live API.
 OFFLINE_MODE = False  # Comment out one or the other
 
-LOG_LEVEL = "DEBUG"  # Options: "INFO", "DEBUG", "ERROR".
+LOG_LEVEL = "INFO"  # Options: "INFO", "DEBUG", "ERROR".
 
 # Set to 'RailDataOrg' or 'AWS'. First uses LDWS API, second uses AWS API Gateway below.
 # API_SOURCE = 'RailDataOrg' # Comment out one or the other
 API_SOURCE = "AWS"  # Comment out one or the other
 
-STATION_CRS = "PMW"  # Station's CRS code
+STATION_CRS = "PEN"  # Station's CRS code
 
-# Number of services to request (0-10).
+# Number of services to request (0-10) from Rail Data API
 # The risk is that services for the requested platform(s) may not appear in the first X results.
-# With this API (and others I looked at) there's ** no way to ask for services only from a given platform **.
-# We want a small number (e.g. 4) for a large station (e.g. EUS), but could maybe afford a larger number for a small station.
-# API responses over 50kb become likely to run out of memory and crash out.
-# Finding a query that works for a given station may require adjustments to the query and parsing of the JSON to keep processing
-# within Pico's limited memory e.g. adding a "To" filter to the query.
-# The comprehensive alternative would be to create an Amazon Lambda function to query the API and
-# return a filtered response via the Amazon API Gateway.
+# The AWS intermediary API solves this.
 RAILDATAORG_NUMBER_OF_SERVICES = const(6)
 
 OFFLINE_JSON_FILE = "sample_data.json"  # File to use for offline mode
 
-FONTDRAWER_FONT_NAME = "dejav_m10"  # Font to use for drawing text on the OLEDs
+FONTDRAWER_FONT_NAME = "dejav_m10"  # Font for text
 
 # CUSTOM_TRAVEL_ALERT = "This is a 100 character long test travel alert for testing purposes. Please ignore. 12345"  # Set to None to disable
 

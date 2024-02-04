@@ -7,6 +7,7 @@ Description: General utils not specific to a particular thing
 GitHub Repository: https://github.com/Pharkie/AdamGalactic/
 License: GNU General Public License (GPL)
 """
+
 import os
 import network
 import utime
@@ -79,7 +80,7 @@ def connect_wifi(oled1=None, oled2=None):
                     ":)",
                     config.THIN_LINETWO_Y,
                 )
-                utime.sleep(1)
+                # utime.sleep(1)
                 # Clear screens but don't update display
                 if oled1:
                     oled1.fill(0)

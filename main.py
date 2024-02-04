@@ -164,7 +164,7 @@ async def main():
     Returns:
         None
     """
-    set_global_exception()  # Debug aid
+    set_global_exception()
 
     log_message(
         f"\n\n[Program started] {'OFFLINE' if config.OFFLINE_MODE else 'ONLINE'} mode.\n"
@@ -185,7 +185,7 @@ async def main():
         raise RuntimeError("Need oled on oled1, didn't find.")
 
     display_utils.display_init_message(oled1, oled2)
-    utime.sleep(2)
+    utime.sleep(1)
 
     display_utils.clear_display(oled1)
     if oled2:
