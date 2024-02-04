@@ -1,12 +1,42 @@
-# This is a lambda function that runs on AWS Lambda. It's called by the API Gateway.
-# It fetches data from the National Rail API and filters it to only include services from the requested platform(s).
+"""
+Author: Adam Knowles
+Version: 0.1
+Name: aws-lambda-function.py
+Description: This is a lambda function that runs on AWS Lambda. It's called by the API Gateway.
+It fetches data from the National Rail API and filters it to only include services
+from the requested platform(s).
 
+GitHub Repository: https://github.com/Pharkie/picow-railway-departure
+Inspired by Stewart Watkiss - PenguinTutor
+License: GNU General Public License (GPL)
+"""
+
+import time
 import json
 import requests
-import time
 
+
+MAX_RETRIES = 3  # Number of times to retry the request
+DELAY_BETWEEN_RETRIES = 0.2  # Delay in seconds
+
+LDBWS_API_URL_BASE = (
+    "https://api1.raildata.org.uk"
+    "/1010-live-departure-board-dep/LDBWS/api/20220120/GetDepBoardWithDetails/"
+)
 
 def keep_keys_in_dict(dict_del, keys):
+    """
+    Modifies the input dictionary in-place by removing keys that are not in the provided list.
+    The function works recursively for nested dictionaries and lists of dictionaries.
+
+    Parameters:
+    dict_del (dict): The dictionary from which to remove keys.
+    keys (list): A list of keys to keep in the dictionary. Nested keys can be specified using
+    dot notation (e.g., "key.subkey").
+
+    Returns:
+    None
+    """
     keys_set = set(keys)
     keys_with_subkeys = {k.split(".")[0] for k in keys if "." in k}
 
@@ -34,7 +64,18 @@ def keep_keys_in_dict(dict_del, keys):
                             keep_keys_in_dict(subitem, subkeys)
 
 
-def lambda_handler(event, context):
+def lambda_handler(event, _):
+    """
+    AWS Lambda function to fetch and filter rail data based on the provided event.
+
+    Parameters:
+    event (dict): The event data passed by AWS Lambda, containing path parameters, headers, and
+    query parameters.
+    _ (context): Unused AWS Lambda context object.
+
+    Returns:
+    dict: A response dictionary containing the HTTP status code and the body as a JSON string.
+    """
     # Get CRS code from path parameters
     crs_code = event.get("pathParameters", {}).get("CRS")
     if not crs_code:
@@ -59,39 +100,38 @@ def lambda_handler(event, context):
         }
 
     # Get optional platform numbers from query parameters and split into a list
-    queryStringParameters = event.get("queryStringParameters")
+    query_string_parameters = event.get("queryStringParameters")
     platform_numbers = None
-    if queryStringParameters is not None:
-        platforms_param = queryStringParameters.get("platforms")
+    if query_string_parameters is not None:
+        platforms_param = query_string_parameters.get("platforms")
         if platforms_param is not None:
             platform_numbers = platforms_param.split(",")
 
     # Define API URL and headers
-    LDBWS_API_URL = (
-        f"https://api1.raildata.org.uk"
-        f"/1010-live-departure-board-dep/LDBWS/api/20220120/GetDepBoardWithDetails/{crs_code}"
-    )
+    ldbws_api_url = LDBWS_API_URL_BASE + str(crs_code)
 
     request_headers = {"x-apikey": api_key}
 
     # Fetch rail data
-    MAX_RETRIES = 3
-    DELAY_BETWEEN_RETRIES = 0.2  # Delay in seconds
+
     data = None
 
     # Typical API response time is 0.5 seconds, so 2 seconds should be enough to allow for retries
-    # Increase timeout on Lambda function (8s?). Default 3s means may timeout before the second attempt.
+    # Increase timeout on Lambda function (8s?). Default 3s means may timeout before the
+    # second attempt.
     for i in range(MAX_RETRIES):
         try:
             print(
-                f"[AWS] Starting attempt {i+1} of {MAX_RETRIES} to fetch rail data from RailData API."
+                f"[AWS] Starting attempt {i+1} of {MAX_RETRIES} to " +
+                "fetch rail data from RailData API."
             )
-            response = requests.get(LDBWS_API_URL, headers=request_headers, timeout=2)
-            response.raise_for_status()  # Raise an exception if the response contains an HTTP error status code
+            response = requests.get(ldbws_api_url, headers=request_headers, timeout=2)
+            # Raise an exception if the response contains an HTTP error status code
+            response.raise_for_status()
             data = response.json()
             print(f"[AWS] Success: got RailData JSON back on attempt {i+1}.")
             break  # If the request was successful, break out of the loop
-        except requests.exceptions.RequestException as e:
+        except requests.exceptions.RequestException as e: # pylint: disable=I1101 # type: ignore
             print(
                 f"[AWS] [Error] On attempt {i+1} of {MAX_RETRIES} got error: {str(e)}."
             )
@@ -125,12 +165,13 @@ def lambda_handler(event, context):
     #     "[AWS] Filtering services based on platform and only including specific fields."
     # )
     filtered_services = []
-    for service in data.get("trainServices", []):
-        if platform_numbers is None or (
-            service.get("platform") and service.get("platform") in platform_numbers
-        ):
-            keep_keys_in_dict(service, keys_to_keep)
-            filtered_services.append(service)
+    if data is not None:
+        for service in data.get("trainServices", []):
+            if platform_numbers is None or (
+                service.get("platform") and service.get("platform") in platform_numbers
+            ):
+                keep_keys_in_dict(service, keys_to_keep)
+                filtered_services.append(service)
     # print("[AWS] Success: filtered services.")
 
     # Limit to the first two services for each platform
@@ -150,5 +191,5 @@ def lambda_handler(event, context):
 
     # print(f"[AWS] Final list of services to send as response: {filtered_services}")
 
-    # Return the filtered data inside the trinaServices key
+    # Return the filtered data inside the trainServices key
     return {"statusCode": 200, "body": json.dumps({"trainServices": filtered_services})}

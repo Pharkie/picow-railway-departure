@@ -1,19 +1,40 @@
+"""
+Author: Adam Knowles
+Version: 0.1
+Name: aws_api.py
+Description: Interface with AWS API. Signs a request with AWS credentials and an API key.
+
+GitHub Repository: https://github.com/Pharkie/picow-railway-departure
+License: GNU General Public License (GPL)
+"""
 import hmac
 import hashlib
-import ubinascii
+# import json
+import ubinascii # pylint: disable=import-error
 import utime
-import urequests
-import json
+import requests
 import config
 import credentials
 
 
-def getSignatureKey(secret_key, date_stamp, regionName, serviceName):
-    kDate = sign(("AWS4" + secret_key).encode("utf-8"), date_stamp)
-    kRegion = sign(kDate, regionName)
-    kService = sign(kRegion, serviceName)
-    kSigning = sign(kService, "aws4_request")
-    return kSigning
+def get_signature_key(secret_key, date_stamp, region_name, service_name):
+    """
+    Generates a signing key for AWS API requests.
+
+    Parameters:
+    secret_key (str): The AWS secret key.
+    date_stamp (str): The date in YYYYMMDD format.
+    regionName (str): The AWS region name.
+    serviceName (str): The AWS service name.
+
+    Returns:
+    bytes: The signing key.
+    """
+    k_date = sign(("AWS4" + secret_key).encode("utf-8"), date_stamp)
+    k_region = sign(k_date, region_name)
+    k_service = sign(k_region, service_name)
+    k_signing = sign(k_service, "aws4_request")
+    return k_signing
 
 
 def create_signed_headers(
@@ -28,6 +49,24 @@ def create_signed_headers(
     additional_headers=None,
     payload="",
 ):
+    """
+    Creates signed headers for AWS API requests.
+
+    Parameters:
+    api_host (str): The API host.
+    api_uri (str): The API URI.
+    region (str): The AWS region.
+    service (str): The AWS service.
+    access_key (str): The AWS access key.
+    secret_key (str): The AWS secret key.
+    http_method (str, optional): The HTTP method. Defaults to "GET".
+    query_string (str, optional): The query string. Defaults to "".
+    additional_headers (dict, optional): Additional headers. Defaults to None.
+    payload (str, optional): The payload. Defaults to "".
+
+    Returns:
+    dict: The signed headers.
+    """
     # Create a date for headers and the credential string
     t = utime.gmtime()
     amz_date = f"{t[0]:04d}{t[1]:02d}{t[2]:02d}T{t[3]:02d}{t[4]:02d}{t[5]:02d}Z"
@@ -74,7 +113,7 @@ def create_signed_headers(
     )
 
     # Calculate the signature
-    signing_key = getSignatureKey(secret_key, date_stamp, region, service)
+    signing_key = get_signature_key(secret_key, date_stamp, region, service)
     signature = hmac.new(
         signing_key, string_to_sign.encode("utf-8"), digestmod="sha256"
     ).hexdigest()
@@ -119,10 +158,30 @@ def create_signed_headers(
 
 
 def sign(key, msg):
+    """
+    Generates a HMAC-SHA256 signature for a message.
+
+    Parameters:
+    key (bytes): The secret key for the HMAC operation.
+    msg (str): The message to sign.
+
+    Returns:
+    bytes: The HMAC-SHA256 signature of the message.
+    """
     return hmac.new(key, msg.encode("utf-8"), digestmod="sha256").digest()
 
 
 def main():
+    """
+    Test this module. 
+    Sends a request to the AWS API and prints the response.
+
+    The request is signed with AWS credentials and an API key. The HTTP method and payload can be
+    customized. If the request fails, an error message is printed and the function returns early.
+
+    Side Effects:
+    Sends a request to the AWS API and prints the response or an error message.
+    """
     additional_headers = {"x-apikey": credentials.RAILDATAORG_API_KEY}
     payload = ""
     http_method = "GET"
@@ -142,24 +201,24 @@ def main():
 
     try:
         if http_method == "GET":
-            response = urequests.get(config.AWS_API_URL, headers=headers)
+            response = requests.get(config.AWS_API_URL, headers=headers)
         elif http_method == "POST":
-            response = urequests.post(config.AWS_API_URL, headers=headers, data=payload)
+            response = requests.post(config.AWS_API_URL, headers=headers, data=payload)
         elif http_method == "PUT":
-            response = urequests.put(config.AWS_API_URL, headers=headers, data=payload)
+            response = requests.put(config.AWS_API_URL, headers=headers, data=payload)
         elif http_method == "DELETE":
-            response = urequests.delete(config.AWS_API_URL, headers=headers)
+            response = requests.delete(config.AWS_API_URL, headers=headers)
         else:
             raise ValueError(f"Unsupported HTTP method: {http_method}")
 
         if response.status_code < 200 or response.status_code >= 400:
             print(f"Request failed with status code {response.status_code}")
             return
-    except Exception as e:
+    except (IOError, OSError, ValueError, TypeError, MemoryError) as e:
         print(f"Request failed: {e}")
         return
 
-    response_json = json.loads(response.text)
+    # response_json = json.loads(response.text)
 
     # # Use this troubleshooting AWS. Get the message and any error from the response
     # message = response_json.get('message')

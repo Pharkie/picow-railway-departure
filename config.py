@@ -1,10 +1,36 @@
-# Using const() to save memory wherever values will not change during execution (not needed for strings).
+"""
+Author: Adam Knowles
+Version: 0.1
+Name: config.py
+Description: Config variables for main program.
+
+GitHub Repository: https://github.com/Pharkie/picow-railway-departure
+License: GNU General Public License (GPL)
+"""
+# Using const() to save memory wherever values will not change during
+# execution (not needed for strings).
 import re
 from micropython import const
 from machine import Pin
 
 
 def parse_url(url):
+    """
+    Parses a URL into its components.
+
+    This function uses a regular expression to parse the URL into its components: protocol, 
+    host, URI, and query string. If the URL does not match the regular expression, a ValueError 
+    is raised.
+
+    Parameters:
+    url (str): The URL to parse.
+
+    Returns:
+    tuple: A tuple containing the protocol, host, URI, and query string of the URL.
+
+    Raises:
+    ValueError: If the URL does not match the regular expression.
+    """
     pattern = "^(https?):\\/\\/([^\\/]+)\\/([^\\?]*)(\\?(.*))?"
     match = re.match(pattern, url)
 
@@ -39,7 +65,11 @@ OFFLINE_JSON_FILE = "sample_data.json"  # File to use for offline mode
 
 FONTDRAWER_FONT_NAME = "dejav_m10"  # Font for text
 
-# CUSTOM_TRAVEL_ALERT = "This is a 100 character long test travel alert for testing purposes. Please ignore. 12345"  # Set to None to disable
+# Set to None to disable
+# CUSTOM_TRAVEL_ALERT = (
+#     "This is a 100 character long test travel alert for testing purposes. "
+#     "Please ignore. 12345"
+# )
 
 # I2C pins for OLED screens
 OLED1_SCL_PIN = Pin(17)  # Blue
@@ -63,7 +93,10 @@ OLED2_PLATFORM_NUMBER = (
 AWS_PLATFORMS_TO_GET = ",".join([OLED1_PLATFORM_NUMBER, OLED2_PLATFORM_NUMBER])
 
 # Specify the full API URL and the code will parse it into components.
-AWS_API_URL = f"https://kmm1ogta93.execute-api.eu-west-2.amazonaws.com/prod/{STATION_CRS}?platforms={AWS_PLATFORMS_TO_GET}"
+AWS_API_URL = (
+    f"https://kmm1ogta93.execute-api.eu-west-2.amazonaws.com/prod/{STATION_CRS}"
+    + f"?platforms={AWS_PLATFORMS_TO_GET}"
+)
 
 # Parse the URL into components
 AWS_API_PROTOCOL, AWS_API_HOST, AWS_API_URI, AWS_API_QUERYSTRING = parse_url(

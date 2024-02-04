@@ -2,13 +2,28 @@
 Author: Adam Knowles
 Version: 0.1
 Name: main.py
-Description: Mini Pico W OLED departure boards for model railway
+Description: Mini Pico W OLED departure boards for model railway.
+Uses 2 x SSD1306 OLED displays, 128x32 pixels, I2C.
+Could maybe be adapted to work with other displays.
 
 GitHub Repository: https://github.com/Pharkie/picow-railway-departure
-Based on work by Stewart Watkiss - PenguinTutor
+Inspired by Stewart Watkiss - PenguinTutor (see upstream repo)
 License: GNU General Public License (GPL)
 
-Known issues: doesn't handle DST change while device is running, since only checks at startup.
+User modules:
+- config.py: Config variables for main program.
+- rail_data.py: Functions for fetching and processing rail data.
+- aws_api.py: Interface with AWS API. Signs a request with AWS credentials and an API key.
+- display_utils.py: Functions for displaying information on the OLED screens.
+- datetime_utils.py: Functions for working with date and time.
+- utils.py: General utils not specific to a particular aspect of the program.
+
+Also includes:
+- aws_lambda_function.py: Lambda function to use with AWS Lambda as an API intermediary.
+- sample_data.json: Sample data for offline mode, a JSON response saved from an API call.
+
+Known issues: 
+- ETIMEDOUT sometimes happens and crashes prog. Fix attempted (catch IOError) in rail_data.py.
 
 """
 
@@ -16,7 +31,6 @@ import asyncio
 import sys
 import gc
 from machine import I2C
-import machine
 import utime
 import datetime_utils
 import rail_data
@@ -28,7 +42,15 @@ from utils import log_message
 
 
 def set_global_exception():
-    def handle_exception(loop, context):
+    """
+    Sets a global exception handler for the asyncio event loop.
+
+    This function defines a handler that logs the exception message and the exception itself
+    at the ERROR level, and then exits the program. It then gets the current event loop and
+    sets the exception handler to the defined handler.
+    """
+
+    def handle_exception(loop, context): # pylint: disable=unused-argument
         log_message(f"Caught global exception: {context['message']}", level="ERROR")
         log_message(str(context["exception"]), level="ERROR")
         sys.exit()
@@ -41,8 +63,9 @@ def initialize_oled(i2c, display_name):
     """
     This function initializes an OLED display.
 
-    It first scans the I2C bus for devices. If devices are found, it prints the address of the first device.
-    Then, it initializes an SSD1306 OLED display on the I2C bus, clears the display, and shows a loading message.
+    It first scans the I2C bus for devices. If devices are found, it prints the address of the
+    first device. Then, it initializes an SSD1306 OLED display on the I2C bus, clears the display,
+    and shows a loading message.
 
     Parameters:
     i2c: The I2C bus object.
@@ -72,11 +95,13 @@ def setup_displays():
     """
     Sets up two OLED displays on two separate I2C buses.
 
-    It first initializes the I2C buses. Then, it calls `initialize_oled` to initialize each display.
+    It first initializes the I2C buses. Then, it calls `initialize_oled` to initialize
+    each display.
     If the second display fails to initialize, it prints a message to console and continues.
 
     Returns:
-    setup_oled1, setup_oled2: The initialized OLED display objects. If a display failed to initialize, its value will be None.
+    setup_oled1, setup_oled2: The initialized OLED display objects. If a display failed to
+    initialize, its value will be None.
     """
     i2c_oled1 = I2C(0, scl=config.OLED1_SCL_PIN, sda=config.OLED1_SDA_PIN, freq=200000)
     i2c_oled2 = I2C(1, scl=config.OLED2_SCL_PIN, sda=config.OLED2_SDA_PIN, freq=200000)
@@ -195,7 +220,7 @@ async def main():
 
     # At startup, run initial data gathering and wait
     # Sync the RTC with NTP or set a random time if in offline mode
-    datetime_utils.sync_NTP()
+    datetime_utils.sync_ntp()
 
     asyncio.create_task(display_utils.display_clock(oled1))
     if oled2:
@@ -209,7 +234,8 @@ async def main():
             await rail_data_instance.get_online_rail_data(oled1, oled2)
         except (OSError, ValueError, TypeError, MemoryError) as caught_error:
             log_message(
-                f"First API call failed. Exiting program: {caught_error}", level="ERROR"
+                f"First API call failed. Exiting program: {caught_error}",
+                level="ERROR",
             )
             raise
         asyncio.create_task(rail_data_instance.cycle_get_online_rail_data(oled1, oled2))
@@ -219,7 +245,7 @@ async def main():
         asyncio.create_task(cycle_oled(oled2, rail_data_instance, 2))
 
     # Check if DST, every 60 seconds
-    asyncio.create_task(utils.run_periodically(datetime_utils.check_DST, 60))
+    asyncio.create_task(utils.run_periodically(datetime_utils.check_dst, 60))
 
     # Run the above tasks until Exception or KeyboardInterrupt
     loop_counter = 0
@@ -237,11 +263,12 @@ if __name__ == "__main__":
         asyncio.run(main())
     except KeyboardInterrupt:
         log_message("[Program exiting cleanly] Keyboard Interrupt")
-    except Exception as e:
+    # (I do want to catch all exceptions)
+    except Exception as e: # pylint: disable=broad-exception-caught
         log_message(
-            f"Unrecoverable error. Rebooting automatically. Info: {str(e)}",
+            f"Unrecoverable error: {str(e)}",
             level="ERROR",
         )
-        machine.reset()  # Helpful?
+        # machine.reset()  # Helpful?
     finally:
         asyncio.new_event_loop()  # Clear retained state

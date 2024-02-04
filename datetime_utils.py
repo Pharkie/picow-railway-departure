@@ -17,6 +17,16 @@ from config import OFFLINE_MODE
 
 
 def format_date(dt):
+    """
+    Formats a date as 'DD MMM YYYY'.
+
+    Parameters:
+    dt (tuple): A tuple containing three integers representing the year, month,
+    and day, respectively.
+
+    Returns:
+    str: The formatted date string.
+    """
     # Format the date as 'DD MMM YYYY'.
     months = [
         "Jan",
@@ -32,17 +42,27 @@ def format_date(dt):
         "Nov",
         "Dec",
     ]
-    day = "{:02d}".format(dt[2])
+    day = f"{dt[2]:02d}"
     month = months[dt[1] - 1]
-    year = "{:04d}".format(dt[0])
+    year = f"{dt[0]:04d}"
     return f"{day} {month} {year}"
 
 
 def last_sunday(year, month):
+    """
+    Calculates the date of the last Sunday of the specified month and year.
+
+    Parameters:
+    year (int): The year for which to find the last Sunday.
+    month (int): The month for which to find the last Sunday.
+
+    Returns:
+    int: The Unix timestamp of the last Sunday of the specified month and year.
+    """
     # Calculate the date of the last Sunday of the specified month and year.
     # Find the date of the last Sunday in a given month
     last_day = (
-        utime.mktime((year, month + 1, 1, 0, 0, 0, 0, 0))
+        utime.mktime((year, month + 1, 1, 0, 0, 0, 0, 0)) # type: ignore
         - 86400  # pylint: disable=no-value-for-parameter
     )  # Set to the last day of the previous month
     weekday = utime.localtime(last_day)[6]  # Get the weekday for the last day
@@ -53,7 +73,16 @@ def last_sunday(year, month):
     return int(last_day)
 
 
-def is_DST(timestamp):
+def is_dst(timestamp):
+    """
+    Checks if the given timestamp is in Daylight Saving Time (DST), considering the 1 am transition.
+
+    Parameters:
+    timestamp (int): The Unix timestamp to check.
+
+    Returns:
+    bool: True if the timestamp is in DST, False otherwise.
+    """
     # Check if the given timestamp is in DST (BST) considering the 1 am transition
     time_tuple = utime.localtime(timestamp)
     dst_start = last_sunday(time_tuple[0], 3)  # Last Sunday of March
@@ -61,7 +90,8 @@ def is_DST(timestamp):
 
     # Check if the current time is within DST dates
     if dst_start <= timestamp < dst_end:
-        # Check if it's after 1 am on the last Sunday of March and before 2 am on the last Sunday of October
+        # Check if it's after 1 am on the last Sunday of March and before 2 am on the
+        # last Sunday of October
         if (
             time_tuple[1] == 3
             and time_tuple[2] == (dst_start // 86400) + 1
@@ -79,6 +109,18 @@ def is_DST(timestamp):
 
 
 def get_time_values(current_time_tuple=None):
+    """
+    Splits a time into individual digits, defaulting to the current, real time if no time is
+    provided.
+
+    Parameters:
+    current_time_tuple (tuple, optional): A tuple representing the time to split. If None, the
+    current time is used.
+
+    Returns:
+    tuple: A tuple containing the tens and ones places of the hours, minutes, and seconds, as
+    well as the day of the month, month name, and year.
+    """
     # Split a time into individual digits, defaulting to current, real time.
     if current_time_tuple is None:
         current_time_tuple = utime.localtime()
@@ -119,7 +161,16 @@ def get_time_values(current_time_tuple=None):
     )
 
 
-def sync_NTP():
+def sync_ntp():
+    """
+    Syncs the Real Time Clock (RTC) with NTP, or sets a random time if in offline mode.
+
+    Raises:
+    OSError: If not in offline mode and WiFi is not connected.
+
+    Side Effects:
+    Sets the RTC to the current NTP time, or a random time if in offline mode.
+    """
     if OFFLINE_MODE:
         # Generate random values for hours, minutes, and seconds
         hours = random.randint(0, 23)
@@ -137,11 +188,20 @@ def sync_NTP():
     try:
         ntptime.settime()
         utils.log_message("RTC set from NTP", level="INFO")
-    except Exception as e:
-        utils.log_message(f"Failed to set RTC from NTP: {e}", level="ERROR")
+    except (OSError, ValueError) as error:
+        utils.log_message(f"Failed to set RTC from NTP: {error}")
 
 
-async def check_DST():
+async def check_dst():
+    """
+    Checks if Daylight Saving Time (DST) is in effect and updates the RTC if necessary.
+
+    Raises:
+    Exception: If there's an error while checking DST or updating the RTC.
+
+    Side Effects:
+    Updates the RTC time if it differs from the current time by more than a minute.
+    """
     try:
         # Get the current time from utime
         current_timestamp = utime.time()
@@ -161,19 +221,20 @@ async def check_DST():
         )
 
         # Convert the RTC timestamp to seconds since the Epoch
-        rtc_timestamp_seconds = utime.mktime(rtc_timestamp_rearranged)
+        rtc_timestamp_seconds = utime.mktime(rtc_timestamp_rearranged) # type: ignore
 
         # Check if DST is in effect
-        is_DST_flag = is_DST(current_timestamp)
+        is_dst_flag = is_dst(current_timestamp)
 
         # If DST is in effect, add an hour to the current timestamp
-        if is_DST_flag:
+        if is_dst_flag:
             current_timestamp += 3600
 
         # If the current timestamp and the RTC timestamp differ by more than a minute,
         # update the RTC
         if abs(current_timestamp - rtc_timestamp_seconds) > 60:
-            # rtc.datetime() param is a different format of tuple to utime.localtime() so below converts it
+            # rtc.datetime() param is a different format of tuple to utime.localtime()
+            # so below converts it
             machine.RTC().datetime(
                 (
                     utime.localtime(current_timestamp)[0],
@@ -187,13 +248,13 @@ async def check_DST():
                 )
             )
             utils.log_message(
-                f"RTC time updated for DST: {is_DST_flag}",
+                f"RTC time updated for DST: {is_dst_flag}",
                 level="INFO",
             )
         else:
             utils.log_message(
-                f"RTC time not updated for DST, no change from: {is_DST_flag}",
+                f"RTC time not updated for DST, no change from: {is_dst_flag}",
                 level="INFO",
             )
-    except Exception as e:
-        utils.log_message(f"Failed to check DST: {e}")
+    except (OSError, ValueError) as error:
+        utils.log_message(f"Failed to check DST: {error}")

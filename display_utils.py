@@ -5,7 +5,6 @@ Name: display_utils.py
 Description: Display utils for the Pico departure boards
 
 GitHub Repository: https://github.com/Pharkie/picow-railway-departure
-Based on work by Stewart Watkiss - PenguinTutor
 License: GNU General Public License (GPL)
 """
 import utime
@@ -17,6 +16,17 @@ import config
 
 
 def display_init_message_1screen(oled, screen_number, total_screens):
+    """
+    Displays an initialization message on a single screen of the OLED display.
+
+    Parameters:
+    oled (OLED): The OLED display object.
+    screen_number (int): The current screen number.
+    total_screens (int): The total number of screens.
+
+    Side Effects:
+    Updates the OLED display with the initialization message.
+    """
     oled.fill(0)
     oled.fd_oled.print_str("Loading", 0, config.LINEONE_Y)
     oled.fd_oled.print_str("Pico departures", 0, config.THIN_LINETWO_Y)
@@ -29,6 +39,19 @@ def display_init_message_1screen(oled, screen_number, total_screens):
 
 
 def display_init_message(oled1, oled2):
+    """
+    Displays an initialization message on one or two OLED displays.
+
+    Parameters:
+    oled1 (OLED): The first OLED display object.
+    oled2 (OLED): The second OLED display object, if available.
+
+    Raises:
+    RuntimeError: If oled1 is not available.
+
+    Side Effects:
+    Updates the OLED displays with the initialization message.
+    """
     if not oled1:
         raise RuntimeError("oled1 not available")
 
@@ -39,12 +62,24 @@ def display_init_message(oled1, oled2):
             display_init_message_1screen(oled, screen_number, total_screens)
 
 
-async def display_departure_line(
-    oled, departure_number, destination, time_scheduled, y_pos
-):
+async def display_departure_line(oled, departure_number, destination, time_scheduled, y_pos):
+    """
+    Asynchronously displays a departure line on the OLED display.
+
+    Parameters:
+    oled (OLED): The OLED display object.
+    departure_number (str): The departure number to display.
+    destination (str): The destination to display.
+    time_scheduled (str): The scheduled time to display.
+    y_pos (int): The y position on the display to start at.
+
+    Side Effects:
+    Updates the OLED display with the departure line.
+    """
     _max_length = const(12)
 
-    # Split the destination into lines of up to max_length characters each, breaking at word boundaries
+    # Split the destination into lines of up to max_length characters each, breaking
+    # at word boundaries
     lines = wrap_text(destination, _max_length)
 
     while True:
@@ -61,6 +96,16 @@ async def display_departure_line(
 
 
 async def display_first_departure(oled, first_departure):
+    """
+    Asynchronously displays the first departure on the OLED display.
+
+    Parameters:
+    oled (OLED): The OLED display object.
+    first_departure (dict): The first departure data to display.
+
+    Side Effects:
+    Updates the OLED display with the first departure data.
+    """
     # print(f"Displaying first departure for: {oled} = {departures}")
 
     display_departure_task = asyncio.create_task(
@@ -159,6 +204,17 @@ def both_screen_text(
     text3=None,
     y3=None,
 ):
+    """
+    Displays up to three lines of text on both OLED displays.
+
+    Parameters:
+    oled1, oled2 (OLED): The OLED display objects.
+    text1, text2, text3 (str): The text lines to display. If None, the line is not displayed.
+    y1, y2, y3 (int): The y positions on the display to start each line at.
+
+    Side Effects:
+    Updates both OLED displays with the provided text lines.
+    """
     for i, oled in enumerate((oled1, oled2)):
         if oled is not None:
             oled.fill(0)
@@ -178,6 +234,15 @@ def both_screen_text(
 
 
 def format_calling_points(departure):
+    """
+    Formats the calling points of a departure into a string.
+
+    Parameters:
+    departure (dict): The departure data, including 'subsequentCallingPoints' and 'operator'.
+
+    Returns:
+    str: A string describing the calling points and the operator of the departure.
+    """
     calling_points = departure["subsequentCallingPoints"]
 
     if not calling_points:
@@ -222,9 +287,20 @@ def display_centred_text(oled, text, y):
 
 
 def centre_x(text, char_width):
+    """
+    Calculates the x-coordinate to centre a text message on the display.
+
+    Parameters:
+    text (str): The text message to be displayed.
+    char_width (int): The width of a character on the display.
+
+    Returns:
+    int: The x-coordinate to start the text at to centre it on the display.
+    """
     message_width = len(text) * char_width
     x = (config.DISPLAY_WIDTH - message_width) // 2
-    # print(f"centre_x() called with text: {text}, char_width: {char_width}, message_width: {message_width}, x: {x}")
+    # print(f"centre_x() called with text: {text}, char_width: {char_width}" +
+    # f" message_width: {message_width}, x: {x}")
     return x
 
 
@@ -316,8 +392,8 @@ async def display_travel_alert(oled, alert_message):
     oled: The OLED display object.
     nrcc_message: A travel alert message to display.
     """
-    MAX_LINES_PER_SCREEN = 2  # Maximum number of lines per screen
-    MAX_CHARS_PER_LINE = 19  # Maximum number of characters per line
+    max_lines_per_screen = 2  # Maximum number of lines per screen
+    max_chars_per_line = 19  # Maximum number of characters per line
 
     preroll_text = "Travel Alert"
     preroll_centre_x = (
@@ -342,11 +418,11 @@ async def display_travel_alert(oled, alert_message):
     line = ""
 
     for word in words:
-        if len(line) + len(word) + 1 > MAX_CHARS_PER_LINE:  # +1 for the space
+        if len(line) + len(word) + 1 > max_chars_per_line:  # +1 for the space
             screen.append(line)
             line = ""
 
-            if len(screen) == MAX_LINES_PER_SCREEN:
+            if len(screen) == max_lines_per_screen:
                 screens.append(screen)
                 screen = []
 
@@ -373,14 +449,25 @@ async def display_travel_alert(oled, alert_message):
 
 
 async def scroll_text(oled, text, y):
+    """
+    Asynchronously scrolls a line of text across the OLED display.
+
+    Parameters:
+    oled (OLED): The OLED display object.
+    text (str): The text to scroll.
+    y (int): The y position on the display to start at.
+
+    Side Effects:
+    Updates the OLED display with the scrolling text.
+    """
     # print(f"scroll_text() called with text: {text}")
     text_width = len(text) * config.THICK_CHAR_WIDTH
-    FRAME_DELAY = 0.1  # Going under this causes problems
-    STEP_SIZE = 6  # Smoother scrolling takes too much CPU
+    frame_delay = 0.1  # Going under this causes problems
+    step_size = 6  # Smoother scrolling takes too much CPU
 
-    for x in range(config.DISPLAY_WIDTH, -(text_width + STEP_SIZE), -STEP_SIZE):
+    for x in range(config.DISPLAY_WIDTH, -(text_width + step_size), -step_size):
         clear_line(oled, y)
         oled.text(text, x, y)
         oled.show()
 
-        await asyncio.sleep(FRAME_DELAY)  # Delay between frames
+        await asyncio.sleep(frame_delay)  # Delay between frames
