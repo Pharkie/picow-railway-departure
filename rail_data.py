@@ -75,7 +75,7 @@ class RailData:
 
         Returns:
         dict: A dictionary representing the JSON data from the API response.
-        """   
+        """
         rail_data_headers = {"x-apikey": credentials.RAILDATAORG_API_KEY}
 
         response = None

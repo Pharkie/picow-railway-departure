@@ -135,7 +135,9 @@ async def cycle_oled(oled, rail_data_instance, screen_number):
     If there is a travel alert, it displays the alert.
     """
     while True:
-        if rail_data_instance.api_retry_secs >= 90:  # Sustained API failure
+        # Sustained API failure.
+        # Time elapsed since update will be cumulative from time of failure eg 5+10+20+40=75 secs
+        if rail_data_instance.api_retry_secs >= 40:
             display_utils.clear_line(oled, config.LINEONE_Y)
             display_utils.clear_line(oled, config.THICK_LINETWO_Y)
             oled.fd_oled.print_str("Train update failed", 0, config.LINEONE_Y)
@@ -145,6 +147,11 @@ async def cycle_oled(oled, rail_data_instance, screen_number):
                 config.THIN_LINETWO_Y,
             )
             oled.show()
+
+            # Not needed? Test suggests Pico reconnects if wifi is down then back up.
+            # if not utils.is_wifi_connected():
+            #     log_message("Wifi disconnected. Reconnecting.")
+            #     utils.connect_wifi()
 
             # No point rerunning this code every 3 seconds, so every 30.
             await asyncio.sleep(27)
