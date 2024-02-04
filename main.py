@@ -23,7 +23,7 @@ Also includes:
 - sample_data.json: Sample data for offline mode, a JSON response saved from an API call.
 
 Known issues: 
-- ETIMEDOUT sometimes happens and crashes prog. Fix attempted (catch IOError) in rail_data.py.
+- ETIMEDOUT sometimes happens and crashes prog. Fix attempted.
 
 """
 
@@ -51,8 +51,13 @@ def set_global_exception():
     """
 
     def handle_exception(loop, context): # pylint: disable=unused-argument
-        log_message(f"Caught global exception: {context['message']}", level="ERROR")
-        log_message(str(context["exception"]), level="ERROR")
+        exception = context.get('exception')
+        log_message(
+            f"Exiting. Caught unhandled global exception: {context['message']}, "
+            f"Type: {type(exception).__name__}, "
+            f"Details: {str(exception)}", 
+            level="ERROR"
+        )
         sys.exit()
 
     loop = asyncio.get_event_loop()
@@ -231,7 +236,7 @@ async def main():
         try:
             # If this first API call fails, the program exits, since it has nothing to show.
             await rail_data_instance.get_online_rail_data(oled1, oled2)
-        except (IOError, OSError, ValueError, TypeError, MemoryError) as caught_error:
+        except (OSError, ValueError, TypeError, MemoryError) as caught_error:
             log_message(
                 f"First API call failed. Exiting program: {caught_error}",
                 level="ERROR",

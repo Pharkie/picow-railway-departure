@@ -107,7 +107,7 @@ class RailData:
                     additional_headers=rail_data_headers,
                 )
 
-                # Timeout raises requests.exceptions.Timeout, a subclass of IOError
+                # Timeout should raise an OSError exception
                 response = requests.get(
                     url=config.AWS_API_URL, headers=rail_data_headers, timeout=10
                 )
@@ -297,7 +297,7 @@ class RailData:
                     f"API request success. Next call in {self.api_retry_secs} seconds.",
                     level="INFO",
                 )
-            except (IOError, OSError, ValueError, TypeError, MemoryError) as e:
+            except (OSError, ValueError, TypeError, MemoryError) as e:
                 self.api_fails += 1
                 self.api_retry_secs = min(5 * 2 ** (self.api_fails - 1), 180)
                 log_message(

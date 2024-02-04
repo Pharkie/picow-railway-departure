@@ -214,7 +214,7 @@ def main():
         if response.status_code < 200 or response.status_code >= 400:
             print(f"Request failed with status code {response.status_code}")
             return
-    except (IOError, OSError, ValueError, TypeError, MemoryError) as e:
+    except (OSError, ValueError, TypeError, MemoryError) as e:
         print(f"Request failed: {e}")
         return
 
