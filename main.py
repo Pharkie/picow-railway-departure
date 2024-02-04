@@ -14,16 +14,13 @@ Known issues: doesn't handle DST change while device is running, since only chec
 
 import asyncio
 import sys
-
+import gc
 from machine import I2C
 import machine
-import uasyncio as asyncio
 import utime
 import datetime_utils
-import gc
 import rail_data
 from lib.ssd1306 import SSD1306_I2C
-from lib.fdrawer import FontDrawer
 import display_utils
 import config
 import utils
@@ -66,8 +63,8 @@ def initialize_oled(i2c, display_name):
         oled = SSD1306_I2C(config.DISPLAY_WIDTH, config.DISPLAY_HEIGHT, i2c)
 
         return oled
-    except OSError as e:
-        log_message(f"Failed to initialize {display_name}. Error: {str(e)}")
+    except OSError as error:
+        log_message(f"Failed to initialize {display_name}. Error: {str(error)}")
         return None
 
 

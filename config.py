@@ -22,7 +22,7 @@ def parse_url(url):
 # OFFLINE_MODE = True  # Set to True to use sample_data.json instead of the live API.
 OFFLINE_MODE = False  # Comment out one or the other
 
-LOG_LEVEL = "INFO"  # Options: "INFO", "DEBUG", "ERROR".
+LOG_LEVEL = "DEBUG"  # Options: "INFO", "DEBUG", "ERROR".
 
 # Set to 'RailDataOrg' or 'AWS'. First uses LDWS API, second uses AWS API Gateway below.
 # API_SOURCE = 'RailDataOrg' # Comment out one or the other

@@ -173,7 +173,7 @@ class RailData:
                 )  # Reset the retry delay
 
                 log_message(
-                    f"API request success. Next retry in {self.api_retry_secs} seconds.",
+                    f"API request success. Next call in {self.api_retry_secs} seconds.",
                     level="INFO",
                 )
             except (OSError, ValueError, TypeError, MemoryError) as e:
