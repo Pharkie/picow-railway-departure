@@ -4,7 +4,7 @@ Version: 0.1
 Name: aws-lambda-function.py
 Description: This is a lambda function that runs on AWS Lambda. It's called by the API Gateway.
 It fetches data from the National Rail API and filters it to only include services
-from the requested platform(s).
+from the requested platform(s). Includes any NRCC messages.
 
 GitHub Repository: https://github.com/Pharkie/picow-railway-departure
 Inspired by Stewart Watkiss - PenguinTutor
@@ -13,8 +13,8 @@ License: GNU General Public License (GPL)
 
 import time
 import json
+import re
 import requests
-
 
 MAX_RETRIES = 3  # Number of times to retry the request
 DELAY_BETWEEN_RETRIES = 0.2  # Delay in seconds
@@ -114,7 +114,8 @@ def lambda_handler(event, _):
 
     # Fetch rail data
 
-    data = None
+    json_response = None
+    nrcc_messages = None
 
     # Typical API response time is 0.5 seconds, so 2 seconds should be enough to allow for retries
     # Increase timeout on Lambda function (8s?). Default 3s means may timeout before the
@@ -128,7 +129,12 @@ def lambda_handler(event, _):
             response = requests.get(ldbws_api_url, headers=request_headers, timeout=2)
             # Raise an exception if the response contains an HTTP error status code
             response.raise_for_status()
-            data = response.json()
+            json_response = response.json()
+            nrcc_messages = json_response.get('nrccMessages')
+            if nrcc_messages: # Remove HTML tags from NRCC messages
+                for message in nrcc_messages:
+                    message['Value'] = re.sub(r'<.*?>', '', message['Value'])
+                    message['Value'] = re.sub(r'\s+', ' ', message['Value']).strip()
             print(f"[AWS] Success: got RailData JSON back on attempt {i+1}.")
             break  # If the request was successful, break out of the loop
         except requests.exceptions.RequestException as e: # pylint: disable=I1101 # type: ignore
@@ -165,8 +171,8 @@ def lambda_handler(event, _):
     #     "[AWS] Filtering services based on platform and only including specific fields."
     # )
     filtered_services = []
-    if data is not None:
-        for service in data.get("trainServices", []):
+    if json_response is not None:
+        for service in json_response.get("trainServices", []):
             if platform_numbers is None or (
                 service.get("platform") and service.get("platform") in platform_numbers
             ):
@@ -192,4 +198,10 @@ def lambda_handler(event, _):
     # print(f"[AWS] Final list of services to send as response: {filtered_services}")
 
     # Return the filtered data inside the trainServices key
-    return {"statusCode": 200, "body": json.dumps({"trainServices": filtered_services})}
+    return {
+        "statusCode": 200, 
+        "body": json.dumps({
+            "trainServices": filtered_services,
+            "nrccMessages": nrcc_messages
+        })
+    }

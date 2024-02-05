@@ -30,6 +30,7 @@ Known issues:
 import asyncio
 import sys
 import gc
+import io
 from machine import I2C
 import utime
 import datetime_utils
@@ -52,10 +53,14 @@ def set_global_exception():
 
     def handle_exception(loop, context): # pylint: disable=unused-argument
         exception = context.get('exception')
+        s = io.StringIO()
+        sys.print_exception(exception, s) # type: ignore # pylint: disable=no-member
+        traceback_str = s.getvalue()
         log_message(
             f"Exiting. Caught unhandled global exception: {context['message']}, " +
             f"Type: {type(exception).__name__}, " +
-            f"Details: {str(exception)}", 
+            f"Details: {str(exception)}, " +
+            f"Traceback: {traceback_str}", 
             level="ERROR"
         )
         sys.exit()
