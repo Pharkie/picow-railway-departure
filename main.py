@@ -142,7 +142,9 @@ async def cycle_oled(oled, rail_data_instance, screen_number):
     while True:
         # Sustained API failure.
         # Time elapsed since update will be cumulative from time of failure eg 5+10+20+40=75 secs
-        if rail_data_instance.api_retry_secs >= 40:
+        # Figure less than config.BASE_API_UPDATE_INTERVAL is ignored.
+        outdated_secs = max(config.DATA_OUTDATED_SECS, config.BASE_API_UPDATE_INTERVAL)
+        if rail_data_instance.api_retry_secs >= outdated_secs:
             display_utils.clear_line(oled, config.LINEONE_Y)
             display_utils.clear_line(oled, config.THICK_LINETWO_Y)
             oled.fd_oled.print_str("Train update failed", 0, config.LINEONE_Y)
