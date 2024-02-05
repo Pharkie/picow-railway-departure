@@ -393,7 +393,7 @@ async def display_travel_alert(oled, alert_message):
     nrcc_message: A travel alert message to display.
     """
     max_lines_per_screen = 2  # Maximum number of lines per screen
-    max_chars_per_line = 19  # Maximum number of characters per line
+    max_chars_per_line = 18  # Maximum number of characters per line
 
     preroll_text = "Travel Alert"
     preroll_centre_x = (
