@@ -11,8 +11,7 @@ import utime
 import uasyncio as asyncio
 from micropython import const
 import config
-
-# from utils import log_message # Can't because circular import
+import utils_logger
 
 
 def display_init_message_1screen(oled, screen_number, total_screens):
@@ -363,25 +362,31 @@ async def display_clock(oled):
     offline_string = "[offline]"
 
     while True:
-        current_time = utime.localtime()
-        current_seconds = utime.time()
+        try:
+            current_time = utime.localtime()
+            current_seconds = utime.time()
 
-        # Clear where the time is displayed without clearing whole line to save time (?)
-        oled.fill_rect(40, config.THIN_LINETHREE_Y, 80, config.THIN_LINE_HEIGHT, 0)
+            # Clear where the time is displayed without clearing whole line to save time (?)
+            oled.fill_rect(40, config.THIN_LINETHREE_Y, 80, config.THIN_LINE_HEIGHT, 0)
 
-        # offline_string_turn is true for 2 seconds every 15 seconds
-        offline_string_turn = config.OFFLINE_MODE and current_seconds % 15 < 2
+            # offline_string_turn is true for 2 seconds every 15 seconds
+            offline_string_turn = config.OFFLINE_MODE and current_seconds % 15 < 2
 
-        if offline_string_turn:
-            oled.fd_oled.print_str(offline_string, 40, config.THIN_LINETHREE_Y)
-        else:
-            clock_string = time_format.format(
-                current_time[3], current_time[4], current_time[5]
+            if offline_string_turn:
+                oled.fd_oled.print_str(offline_string, 40, config.THIN_LINETHREE_Y)
+            else:
+                clock_string = time_format.format(
+                    current_time[3], current_time[4], current_time[5]
+                )
+                oled.fd_oled.print_str(clock_string, 46, config.THIN_LINETHREE_Y)
+
+            oled.show()
+            await asyncio.sleep(0.9)
+        except Exception as error: # pylint: disable=broad-exception-caught
+            utils_logger.log_message(
+                f"display_clock caught error, will try to ignore: {str(error)}",
+                level="ERROR",
             )
-            oled.fd_oled.print_str(clock_string, 46, config.THIN_LINETHREE_Y)
-
-        oled.show()
-        await asyncio.sleep(0.9)
 
 
 async def display_travel_alert(oled, alert_message):

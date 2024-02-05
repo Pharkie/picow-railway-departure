@@ -39,7 +39,7 @@ from lib.ssd1306 import SSD1306_I2C
 import display_utils
 import config
 import utils
-from utils import log_message
+from utils_logger import log_message
 
 
 def set_global_exception():
@@ -140,54 +140,60 @@ async def cycle_oled(oled, rail_data_instance, screen_number):
     If there is a travel alert, it displays the alert.
     """
     while True:
-        # Sustained API failure.
-        # Time elapsed since update will be cumulative from time of failure eg 5+10+20+40=75 secs
-        # Figure less than config.BASE_API_UPDATE_INTERVAL is ignored.
-        outdated_secs = max(config.DATA_OUTDATED_SECS, config.BASE_API_UPDATE_INTERVAL)
-        if rail_data_instance.api_retry_secs >= outdated_secs:
-            display_utils.clear_line(oled, config.LINEONE_Y)
-            display_utils.clear_line(oled, config.THICK_LINETWO_Y)
-            oled.fd_oled.print_str("Train update failed", 0, config.LINEONE_Y)
-            oled.fd_oled.print_str(
-                f"Retry in {rail_data_instance.api_retry_secs} secs",
-                0,
-                config.THIN_LINETWO_Y,
-            )
-            oled.show()
-
-            # Not needed? Test suggests Pico reconnects if wifi is down then back up.
-            # if not utils.is_wifi_connected():
-            #     log_message("Wifi disconnected. Reconnecting.")
-            #     utils.connect_wifi()
-
-            # No point rerunning this code every 3 seconds, so every 30.
-            await asyncio.sleep(27)
-        else:
-            departures = None
-
-            if screen_number == 1:
-                departures = rail_data_instance.oled1_departures
-            elif screen_number == 2:
-                departures = rail_data_instance.oled2_departures
-
-            display_utils.clear_line(oled, config.LINEONE_Y)
-            display_utils.clear_line(oled, config.THICK_LINETWO_Y)
-
-            if departures:
-                await display_utils.display_first_departure(oled, departures[0])
-
-                if len(departures) > 1:
-                    await display_utils.display_second_departure(oled, departures[1])
-            else:
-                await display_utils.display_no_departures(oled)
-
-            if rail_data_instance.nrcc_message:
-                await display_utils.display_travel_alert(
-                    oled, rail_data_instance.nrcc_message
+        try:
+            # Sustained API failure.
+            # Time elapsed since update will be cumulative from time of failure
+            # eg 5+10+20+40=75 secs
+            # Figure less than config.BASE_API_UPDATE_INTERVAL is ignored.
+            outdated_secs = max(config.DATA_OUTDATED_SECS, config.BASE_API_UPDATE_INTERVAL)
+            if rail_data_instance.api_retry_secs >= outdated_secs:
+                display_utils.clear_line(oled, config.LINEONE_Y)
+                display_utils.clear_line(oled, config.THICK_LINETWO_Y)
+                oled.fd_oled.print_str("Train update failed", 0, config.LINEONE_Y)
+                oled.fd_oled.print_str(
+                    f"Retry in {rail_data_instance.api_retry_secs} secs",
+                    0,
+                    config.THIN_LINETWO_Y,
                 )
+                oled.show()
 
-        await asyncio.sleep(3)
+                # Not needed? Test suggests Pico reconnects if wifi is down then back up.
+                # if not utils.is_wifi_connected():
+                #     log_message("Wifi disconnected. Reconnecting.")
+                #     utils.connect_wifi()
 
+                # No point rerunning this code every 3 seconds, so every 30.
+                await asyncio.sleep(27)
+            else:
+                departures = None
+
+                if screen_number == 1:
+                    departures = rail_data_instance.oled1_departures
+                elif screen_number == 2:
+                    departures = rail_data_instance.oled2_departures
+
+                display_utils.clear_line(oled, config.LINEONE_Y)
+                display_utils.clear_line(oled, config.THICK_LINETWO_Y)
+
+                if departures:
+                    await display_utils.display_first_departure(oled, departures[0])
+
+                    if len(departures) > 1:
+                        await display_utils.display_second_departure(oled, departures[1])
+                else:
+                    await display_utils.display_no_departures(oled)
+
+                if rail_data_instance.nrcc_message:
+                    await display_utils.display_travel_alert(
+                        oled, rail_data_instance.nrcc_message
+                    )
+
+            await asyncio.sleep(3)
+        except Exception as error: # pylint: disable=broad-exception-caught
+            log_message(
+                f"cycle_oled caught error, will try to ignore: {str(error)}",
+                level="ERROR",
+            )
 
 async def main():
     """

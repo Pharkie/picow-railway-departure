@@ -13,6 +13,7 @@ import utime
 import ntptime
 import machine
 import utils
+from utils_logger import log_message
 from config import OFFLINE_MODE
 
 
@@ -176,7 +177,7 @@ def sync_ntp():
         hours = random.randint(0, 23)
         minutes = random.randint(0, 59)
         seconds = random.randint(0, 59)
-        utils.log_message(
+        log_message(
             f"Offline mode: setting a random time {hours:02d}:{minutes:02d}:{seconds:02d}"
         )
 
@@ -187,9 +188,9 @@ def sync_ntp():
 
     try:
         ntptime.settime()
-        utils.log_message("RTC set from NTP", level="INFO")
+        log_message("RTC set from NTP", level="INFO")
     except (OSError, ValueError) as error:
-        utils.log_message(f"Failed to set RTC from NTP: {error}")
+        log_message(f"Failed to set RTC from NTP: {error}")
 
 
 async def check_dst():
@@ -247,14 +248,14 @@ async def check_dst():
                     0,
                 )
             )
-            utils.log_message(
+            log_message(
                 f"RTC time updated for DST: {is_dst_flag}",
                 level="INFO",
             )
         else:
-            utils.log_message(
+            log_message(
                 f"RTC time not updated for DST, no change from: {is_dst_flag}",
                 level="INFO",
             )
-    except (OSError, ValueError) as error:
-        utils.log_message(f"Failed to check DST: {error}")
+    except Exception as error: # pylint: disable=broad-except
+        log_message(f"check_dst() error, will try to ignore: {error}")
