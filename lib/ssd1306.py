@@ -4,6 +4,7 @@
 # https://github.com/micropython/micropython/blob/master/drivers/display/ssd1306.py
 #
 from micropython import const
+import asyncio
 import framebuf
 from lib.fdrawer import FontDrawer
 import config
@@ -40,6 +41,9 @@ class SSD1306(framebuf.FrameBuffer):
 
         # Added to allow an FontDrawer object for this oled to be kept in the same class
         self.fd_oled = FontDrawer(self, font_name=config.FONTDRAWER_FONT_NAME)
+
+        # Added to allow locking of the oled screen
+        self.oled_lock = asyncio.Lock()
 
         super().__init__(self.buffer, self.width, self.height, framebuf.MONO_VLSB)
         self.init_display()

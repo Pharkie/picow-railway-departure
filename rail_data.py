@@ -235,10 +235,12 @@ class RailData:
         )
 
         # Save the current screen contents
-        oled1_before = oled1.save_buffer()
-        oled2_before = oled2.save_buffer()
+        async with oled1.oled_lock:
+            oled1_before = oled1.save_buffer()
+        async with oled2.oled_lock:
+            oled2_before = oled2.save_buffer()
 
-        display_utils.both_screen_text(oled1, oled2, "Updating trains", 12)
+        await display_utils.both_screen_text(oled1, oled2, "Updating trains", 12)
 
         response_json = await self.fetch_data_from_api()
 
@@ -246,10 +248,13 @@ class RailData:
         gc.collect()
 
         # Restore the displays
-        oled1.restore_buffer(oled1_before)
-        oled2.restore_buffer(oled2_before)
-        oled1.show()
-        oled2.show()
+        async with oled1.oled_lock:
+            oled1.restore_buffer(oled1_before)
+            oled1.show()
+
+        async with oled2.oled_lock:
+            oled2.restore_buffer(oled2_before)
+            oled2.show()
 
         oled1_summary = self.get_departure_summary(self.oled1_departures)
         oled2_summary = self.get_departure_summary(self.oled2_departures)
@@ -447,7 +452,7 @@ async def main():
     TypeError: If a function receives an argument of an inappropriate type.
     MemoryError: If a memory allocation fails.
     """
-    utils.connect_wifi()
+    await utils.connect_wifi()
 
     log_message("\n\n[Program started]\n")
     log_message(f"Using API: {config.API_SOURCE}")

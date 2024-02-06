@@ -141,21 +141,23 @@ async def cycle_oled(oled, rail_data_instance, screen_number):
     """
     while True:
         try:
+            outdated_secs = max(config.DATA_OUTDATED_SECS, config.BASE_API_UPDATE_INTERVAL)
+            if rail_data_instance.api_retry_secs >= outdated_secs:
             # Sustained API failure.
             # Time elapsed since update will be cumulative from time of failure
             # eg 5+10+20+40=75 secs
-            # Figure less than config.BASE_API_UPDATE_INTERVAL is ignored.
-            outdated_secs = max(config.DATA_OUTDATED_SECS, config.BASE_API_UPDATE_INTERVAL)
-            if rail_data_instance.api_retry_secs >= outdated_secs:
-                display_utils.clear_line(oled, config.LINEONE_Y)
-                display_utils.clear_line(oled, config.THICK_LINETWO_Y)
-                oled.fd_oled.print_str("Train update failed", 0, config.LINEONE_Y)
-                oled.fd_oled.print_str(
-                    f"Retry in {rail_data_instance.api_retry_secs} secs",
-                    0,
-                    config.THIN_LINETWO_Y,
-                )
-                oled.show()
+            # Number less than config.BASE_API_UPDATE_INTERVAL is ignored.
+                await display_utils.clear_line(oled, config.LINEONE_Y)
+                await display_utils.clear_line(oled, config.THICK_LINETWO_Y)
+
+                async with oled.oled_lock:
+                    oled.fd_oled.print_str("Train update failed", 0, config.LINEONE_Y)
+                    oled.fd_oled.print_str(
+                        f"Retry in {rail_data_instance.api_retry_secs} secs",
+                        0,
+                        config.THIN_LINETWO_Y,
+                    )
+                    oled.show()
 
                 # Not needed? Test suggests Pico reconnects if wifi is down then back up.
                 # if not utils.is_wifi_connected():
@@ -172,8 +174,8 @@ async def cycle_oled(oled, rail_data_instance, screen_number):
                 elif screen_number == 2:
                     departures = rail_data_instance.oled2_departures
 
-                display_utils.clear_line(oled, config.LINEONE_Y)
-                display_utils.clear_line(oled, config.THICK_LINETWO_Y)
+                await display_utils.clear_line(oled, config.LINEONE_Y)
+                await display_utils.clear_line(oled, config.THICK_LINETWO_Y)
 
                 if departures:
                     await display_utils.display_first_departure(oled, departures[0])
@@ -230,15 +232,15 @@ async def main():
         log_message("Need oled on oled1, didn't find.", level="ERROR")
         raise RuntimeError("Need oled on oled1, didn't find.")
 
-    display_utils.display_init_message(oled1, oled2)
+    await display_utils.display_init_message(oled1, oled2)
     utime.sleep(1)
 
-    display_utils.clear_display(oled1)
+    await display_utils.clear_display(oled1)
     if oled2:
-        display_utils.clear_display(oled2)
+        await display_utils.clear_display(oled2)
 
     if not config.OFFLINE_MODE:
-        utils.connect_wifi(oled1, oled2)
+        await utils.connect_wifi(oled1, oled2)
 
     rail_data_instance = rail_data.RailData()
 

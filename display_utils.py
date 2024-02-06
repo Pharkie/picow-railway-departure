@@ -7,14 +7,14 @@ Description: Display utils for the Pico departure boards
 GitHub Repository: https://github.com/Pharkie/picow-railway-departure
 License: GNU General Public License (GPL)
 """
+import asyncio
 import utime
-import uasyncio as asyncio
 from micropython import const
 import config
 import utils_logger
 
 
-def display_init_message_1screen(oled, screen_number, total_screens):
+async def display_init_message_1screen(oled, screen_number, total_screens):
     """
     Displays an initialization message on a single screen of the OLED display.
 
@@ -26,18 +26,19 @@ def display_init_message_1screen(oled, screen_number, total_screens):
     Side Effects:
     Updates the OLED display with the initialization message.
     """
-    oled.fill(0)
-    oled.fd_oled.print_str("Loading", 0, config.LINEONE_Y)
-    oled.fd_oled.print_str("Pico departures", 0, config.THIN_LINETWO_Y)
-    oled.fd_oled.print_str(
-        f"Screen {screen_number} of {total_screens}",
-        0,
-        config.THIN_LINETHREE_Y,
-    )
-    oled.show()
+    async with oled.oled_lock:
+        oled.fill(0)
+        oled.fd_oled.print_str("Loading", 0, config.LINEONE_Y)
+        oled.fd_oled.print_str("Pico departures", 0, config.THIN_LINETWO_Y)
+        oled.fd_oled.print_str(
+            f"Screen {screen_number} of {total_screens}",
+            0,
+            config.THIN_LINETHREE_Y,
+        )
+        oled.show()
 
 
-def display_init_message(oled1, oled2):
+async def display_init_message(oled1, oled2):
     """
     Displays an initialization message on one or two OLED displays.
 
@@ -58,7 +59,7 @@ def display_init_message(oled1, oled2):
 
     for screen_number, oled in enumerate((oled1, oled2), start=1):
         if oled:
-            display_init_message_1screen(oled, screen_number, total_screens)
+            await display_init_message_1screen(oled, screen_number, total_screens)
 
 
 async def display_departure_line(oled, departure_number, destination, time_scheduled, y_pos):
@@ -83,15 +84,16 @@ async def display_departure_line(oled, departure_number, destination, time_sched
 
     while True:
         for line in lines:
-            clear_line(oled, y_pos)
+            async with oled.oled_lock:
+                await clear_line(oled, y_pos)
 
-            oled.fd_oled.print_str(departure_number + line, 0, y_pos)
-            oled.fill_rect(
-                97, y_pos, config.DISPLAY_WIDTH, config.THIN_LINE_HEIGHT, 0
-            )  # Make room for time
-            oled.fd_oled.print_str(time_scheduled, 99, y_pos)
-            oled.show()
-            await asyncio.sleep(3)
+                oled.fd_oled.print_str(departure_number + line, 0, y_pos)
+                oled.fill_rect(
+                    97, y_pos, config.DISPLAY_WIDTH, config.THIN_LINE_HEIGHT, 0
+                )  # Make room for time
+                oled.fd_oled.print_str(time_scheduled, 99, y_pos)
+                oled.show()
+                await asyncio.sleep(3)
 
 
 async def display_first_departure(oled, first_departure):
@@ -120,16 +122,16 @@ async def display_first_departure(oled, first_departure):
 
     time_estimated = first_departure["time_estimated"]
 
-    clear_line(oled, config.THICK_LINETWO_Y)
+    await clear_line(oled, config.THICK_LINETWO_Y)
 
     # Second line: show "on time" or estimated time
     if time_estimated == "On time":
-        display_centred_text(oled, "Due on time", config.THICK_LINETWO_Y)
+        await display_centred_text(oled, "Due on time", config.THICK_LINETWO_Y)
     else:
-        display_centred_text(oled, f"Now due: {time_estimated}", config.THICK_LINETWO_Y)
+        await display_centred_text(oled, f"Now due: {time_estimated}", config.THICK_LINETWO_Y)
 
     await asyncio.sleep(3)
-    clear_line(oled, config.THIN_LINETWO_Y)
+    await clear_line(oled, config.THIN_LINETWO_Y)
     await asyncio.sleep(2)
 
     # Second line: scroll the calling points
@@ -151,7 +153,7 @@ async def display_second_departure(oled, second_departure):
     departures: A list of departures to display.
     """
     # print(f"Displaying second departure: {second_departure}")
-    clear_line(oled, config.THIN_LINETWO_Y)
+    await clear_line(oled, config.THIN_LINETWO_Y)
 
     display_departure_task = asyncio.create_task(
         display_departure_line(
@@ -176,24 +178,27 @@ async def display_no_departures(oled):
     Parameters:
     oled: The OLED display object.
     """
-    clear_line(oled, config.LINEONE_Y)
-    clear_line(oled, config.THIN_LINETWO_Y)
+    await clear_line(oled, config.LINEONE_Y)
+    await clear_line(oled, config.THIN_LINETWO_Y)
     line1_message = "No departures"
-    oled.fd_oled.print_str(
-        line1_message, centre_x(line1_message, config.THIN_CHAR_WIDTH), config.LINEONE_Y
-    )
 
-    line2_message = "in next 2 hours"
-    oled.fd_oled.print_str(
-        line2_message,
-        centre_x(line2_message, config.THIN_CHAR_WIDTH),
-        config.THIN_LINETWO_Y,
-    )
-    oled.show()
+    async with oled.oled_lock:
+        oled.fd_oled.print_str(
+            line1_message, centre_x(line1_message, config.THIN_CHAR_WIDTH), config.LINEONE_Y
+        )
+
+        line2_message = "in next 2 hours"
+        oled.fd_oled.print_str(
+            line2_message,
+            centre_x(line2_message, config.THIN_CHAR_WIDTH),
+            config.THIN_LINETWO_Y,
+        )
+        oled.show()
+
     await asyncio.sleep(12)
 
 
-def both_screen_text(
+async def both_screen_text(
     oled1,
     oled2,
     text1,
@@ -211,25 +216,19 @@ def both_screen_text(
     text1, text2, text3 (str): The text lines to display. If None, the line is not displayed.
     y1, y2, y3 (int): The y positions on the display to start each line at.
 
-    Side Effects:
+    Effect:
     Updates both OLED displays with the provided text lines.
     """
-    for i, oled in enumerate((oled1, oled2)):
+    for oled in (oled1, oled2):
         if oled is not None:
-            oled.fill(0)
-            if i == 0:  # oled1 is being processed
+            async with oled.oled_lock:
+                oled.fill(0)
                 oled.fd_oled.print_str(text1, 0, y1)
                 if text2 is not None and y2 is not None:
                     oled.fd_oled.print_str(text2, 0, y2)
                 if text3 is not None and y3 is not None:
                     oled.fd_oled.print_str(text3, 0, y3)
-            else:  # oled2 is being processed
-                oled.fd_oled.print_str(text1, 0, y1)
-                if text2 is not None and y2 is not None:
-                    oled.fd_oled.print_str(text2, 0, y2)
-                if text3 is not None and y3 is not None:
-                    oled.fd_oled.print_str(text3, 0, y3)
-            oled.show()
+                oled.show()
 
 
 def format_calling_points(departure):
@@ -267,7 +266,7 @@ def format_calling_points(departure):
     return calling_points_text
 
 
-def display_centred_text(oled, text, y):
+async def display_centred_text(oled, text, y):
     """
     This function displays a given text centered on the OLED display at a given y-coordinate.
 
@@ -280,9 +279,11 @@ def display_centred_text(oled, text, y):
     x = max(
         0, (config.DISPLAY_WIDTH - text_width) // 2
     )  # Calculate x-coordinate to center text
-    oled.fill_rect(0, y, config.DISPLAY_WIDTH, 8, 0)  # Clear the line
-    oled.text(text, x, y)  # Display the text
-    oled.show()
+
+    async with oled.oled_lock:
+        oled.fill_rect(0, y, config.DISPLAY_WIDTH, 8, 0)  # Clear the line
+        oled.text(text, x, y)  # Display the text
+        oled.show()
 
 
 def centre_x(text, char_width):
@@ -329,18 +330,19 @@ def wrap_text(text, max_length):
     return lines
 
 
-def clear_display(oled):
+async def clear_display(oled):
     """
     This function clears the OLED display.
 
     Parameters:
     oled: The OLED display object.
     """
-    oled.fill(0)
-    oled.show()
+    async with oled.oled_lock:
+        oled.fill(0)
+        oled.show()
 
 
-def clear_line(oled, y):
+async def clear_line(oled, y):
     """
     This function clears a specific line on the OLED display.
 
@@ -348,7 +350,8 @@ def clear_line(oled, y):
     oled: The OLED display object.
     y: The y-coordinate of the line to clear.
     """
-    oled.fill_rect(0, y, config.DISPLAY_WIDTH, config.THICK_LINE_HEIGHT, 0)
+    async with oled.oled_lock:
+        oled.fill_rect(0, y, config.DISPLAY_WIDTH, config.THICK_LINE_HEIGHT, 0)
 
 
 async def display_clock(oled):
@@ -366,21 +369,23 @@ async def display_clock(oled):
             current_time = utime.localtime()
             current_seconds = utime.time()
 
-            # Clear where the time is displayed without clearing whole line to save time (?)
-            oled.fill_rect(40, config.THIN_LINETHREE_Y, 80, config.THIN_LINE_HEIGHT, 0)
+            async with oled.oled_lock:
+                # Clear where the time is displayed without clearing whole line to save time (?)
+                oled.fill_rect(40, config.THIN_LINETHREE_Y, 80, config.THIN_LINE_HEIGHT, 0)
 
-            # offline_string_turn is true for 2 seconds every 15 seconds
-            offline_string_turn = config.OFFLINE_MODE and current_seconds % 15 < 2
+                # offline_string_turn is true for 2 seconds every 15 seconds
+                offline_string_turn = config.OFFLINE_MODE and current_seconds % 15 < 2
 
-            if offline_string_turn:
-                oled.fd_oled.print_str(offline_string, 40, config.THIN_LINETHREE_Y)
-            else:
-                clock_string = time_format.format(
-                    current_time[3], current_time[4], current_time[5]
-                )
-                oled.fd_oled.print_str(clock_string, 46, config.THIN_LINETHREE_Y)
+                if offline_string_turn:
+                    oled.fd_oled.print_str(offline_string, 40, config.THIN_LINETHREE_Y)
+                else:
+                    clock_string = time_format.format(
+                        current_time[3], current_time[4], current_time[5]
+                    )
+                    oled.fd_oled.print_str(clock_string, 46, config.THIN_LINETHREE_Y)
 
-            oled.show()
+                oled.show()
+
             await asyncio.sleep(0.9)
         except Exception as error: # pylint: disable=broad-exception-caught
             utils_logger.log_message(
@@ -405,16 +410,17 @@ async def display_travel_alert(oled, alert_message):
         config.DISPLAY_WIDTH - len(preroll_text) * config.THIN_CHAR_WIDTH
     ) // 2  # Center the text
 
-    clear_line(oled, config.LINEONE_Y)
-    clear_line(oled, config.THIN_LINETWO_Y)
+    await clear_line(oled, config.LINEONE_Y)
+    await clear_line(oled, config.THIN_LINETWO_Y)
     # Flash the alert text before displaying the message
     for _ in range(2):
-        oled.fd_oled.print_str(preroll_text, preroll_centre_x, config.LINEONE_Y)
-
-        oled.show()
+        async with oled.oled_lock:
+            oled.fd_oled.print_str(preroll_text, preroll_centre_x, config.LINEONE_Y)
+            oled.show()
         await asyncio.sleep(0.5)
-        clear_line(oled, config.LINEONE_Y)
-        oled.show()
+        await clear_line(oled, config.LINEONE_Y)
+        async with oled.oled_lock:
+            oled.show()
         await asyncio.sleep(0.5)
 
     words = alert_message.split()
@@ -440,13 +446,15 @@ async def display_travel_alert(oled, alert_message):
         screens.append(screen)
 
     for screen in screens:
-        clear_line(oled, config.LINEONE_Y)
-        clear_line(oled, config.THIN_LINETWO_Y)
+        await clear_line(oled, config.LINEONE_Y)
+        await clear_line(oled, config.THIN_LINETWO_Y)
 
         for i, line in enumerate(screen):
-            oled.fd_oled.print_str(line, 0, i * config.THIN_LINE_HEIGHT)
+            async with oled.oled_lock:
+                oled.fd_oled.print_str(line, 0, i * config.THIN_LINE_HEIGHT)
 
-        oled.show()  # Update the display
+        async with oled.oled_lock:
+            oled.show()  # Update the display
 
         await asyncio.sleep(3)  # Wait 3 seconds without yielding to the event loop
 
@@ -471,8 +479,9 @@ async def scroll_text(oled, text, y):
     step_size = 6  # Smoother scrolling takes too much CPU
 
     for x in range(config.DISPLAY_WIDTH, -(text_width + step_size), -step_size):
-        clear_line(oled, y)
-        oled.text(text, x, y)
-        oled.show()
+        await clear_line(oled, y)
+        async with oled.oled_lock:
+            oled.text(text, x, y)
+            oled.show()
 
         await asyncio.sleep(frame_delay)  # Delay between frames

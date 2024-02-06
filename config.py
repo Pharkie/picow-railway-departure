@@ -10,6 +10,7 @@ License: GNU General Public License (GPL)
 # Using const() to save memory wherever values will not change during
 # execution (not needed for strings).
 import re
+import asyncio
 from micropython import const
 from machine import Pin
 

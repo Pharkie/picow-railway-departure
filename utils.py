@@ -36,7 +36,7 @@ async def run_periodically(function, seconds):
         await asyncio.sleep(seconds)
 
 
-def connect_wifi(oled1=None, oled2=None):
+async def connect_wifi(oled1=None, oled2=None):
     """
     Connects to the wifi network.
 
@@ -64,7 +64,7 @@ def connect_wifi(oled1=None, oled2=None):
         while waited > 0:
             if wlan.isconnected():
                 log_message("Wifi connected")
-                display_utils.both_screen_text(
+                await display_utils.both_screen_text(
                     oled1,
                     oled2,
                     "Wifi connected",
@@ -75,9 +75,11 @@ def connect_wifi(oled1=None, oled2=None):
                 # utime.sleep(1)
                 # Clear screens but don't update display
                 if oled1:
-                    oled1.fill(0)
+                    async with oled1.oled_lock:
+                        oled1.fill(0)
                 if oled2:
-                    oled2.fill(0)
+                    async with oled2.oled_lock:
+                        oled2.fill(0)
                 break
             elif wlan.status() in [
                 network.STAT_WRONG_PASSWORD,
@@ -89,7 +91,7 @@ def connect_wifi(oled1=None, oled2=None):
             log_message(
                 f"Waiting for Wifi to connect {max_wait + 1 - waited}/{max_wait}"
             )
-            display_utils.both_screen_text(
+            await display_utils.both_screen_text(
                 oled1,
                 oled2,
                 "Connecting wifi",
@@ -104,7 +106,7 @@ def connect_wifi(oled1=None, oled2=None):
             log_message(
                 f"Wifi not connected: timed out. wlan.status: {wlan.status()}", "ERROR"
             )
-            display_utils.both_screen_text(
+            await display_utils.both_screen_text(
                 oled1,
                 oled2,
                 "Config = online",
