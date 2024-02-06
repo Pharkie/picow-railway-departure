@@ -76,25 +76,18 @@ async def display_departure_line(oled, departure_number, destination, time_sched
     Side Effects:
     Updates the OLED display with the departure line.
     """
-    log_message(f"display_departure_line() showing train to {destination}", level="DEBUG")
+    # log_message(f"display_departure_line() showing train to {destination}", level="DEBUG")
     _max_length = const(12)
 
     # Split the destination into lines of up to max_length characters each, breaking
     # at word boundaries
     lines = wrap_text(destination, _max_length)
 
-
-    log_message(f"oled_lock: {oled.oled_lock.locked()}")
-
-    async with oled.oled_lock:
-        oled.fd_oled.print_str("ADAMTEST", 0, 0)
-        oled.show()
-
     while True:
         for line in lines:
-            async with oled.oled_lock:
-                await clear_line(oled, y_pos)
+            await clear_line(oled, y_pos)
 
+            async with oled.oled_lock:
                 oled.fd_oled.print_str(departure_number + line, 0, y_pos)
                 oled.fill_rect(
                     97, y_pos, config.DISPLAY_WIDTH, config.THIN_LINE_HEIGHT, 0
