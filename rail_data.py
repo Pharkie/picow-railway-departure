@@ -83,10 +83,10 @@ class RailData:
         try:
             gc.collect()
 
-            log_message("Calling API", level="DEBUG")
+            log_message("fetch_data_from_api() calling API", level="DEBUG")
 
             if not utils.is_wifi_connected():
-                raise OSError("Wifi not connected")
+                raise OSError("fetch_data_from_api() error: wifi not connected")
 
             if config.API_SOURCE == "RailDataOrg":
                 rail_data_url = (
@@ -114,22 +114,25 @@ class RailData:
                 )
 
             if not response:
-                log_message("No response from API", level="ERROR")
+                log_message("fetch_data_from_api() No response from API", level="ERROR")
                 raise OSError("No response from API")
 
             if response.status_code < 200 or response.status_code >= 300:
                 log_message(
-                    f"HTTP request failed. Status code {response.status_code}. "
-                    "Contents: {response.text[:200]}",
+                    "fetch_data_from_api() HTTP request failed. " +
+                    f"Status code {response.status_code}. " +
+                    f"Contents: {response.text[:200]}",
                     level="ERROR",
                 )
                 raise OSError(
-                    f"HTTP request failed. Status code {response.status_code}. "
-                    "Contents: {response.text[:200]}"
+                    "fetch_data_from_api() HTTP request failed. " +
+                    f"Status code {response.status_code}. " +
+                    f"Contents: {response.text[:200]}"
                 )
 
             # Log the size of the response data in KB, rounded to 2 decimal places
-            log_message(f"API response: {round(len(response.content) / 1024, 2)} KB")
+            log_message("fetch_data_from_api() got response:" +
+                        f" {round(len(response.content) / 1024, 2)} KB")
 
             json_data = ujson.loads(response.text)
 
@@ -229,8 +232,7 @@ class RailData:
         """
         self.get_rail_data_count += 1
         log_message(
-            f"get_online_rail_data call {self.get_rail_data_count}. " +
-            f"Free memory: {gc.mem_free()}",  # pylint: disable=no-member
+            f"get_online_rail_data() call {self.get_rail_data_count}. ",
             level="DEBUG",
         )
 
@@ -242,25 +244,25 @@ class RailData:
 
         await display_utils.both_screen_text(oled1, oled2, "Updating trains", 12)
 
-        response_json = await self.fetch_data_from_api()
-
-        self.parse_rail_data(response_json)
-        gc.collect()
-
-        # Restore the displays
+        # Prevent updates to the screen while we're updating the data
         async with oled1.oled_lock:
-            oled1.restore_buffer(oled1_before)
-            oled1.show()
+            async with oled2.oled_lock:
+                response_json = await self.fetch_data_from_api()
 
-        async with oled2.oled_lock:
-            oled2.restore_buffer(oled2_before)
-            oled2.show()
+                self.parse_rail_data(response_json)
+                gc.collect()
+
+                # Restore the displays
+                oled1.restore_buffer(oled1_before)
+                oled1.show()
+                oled2.restore_buffer(oled2_before)
+                oled2.show()
 
         oled1_summary = self.get_departure_summary(self.oled1_departures)
         oled2_summary = self.get_departure_summary(self.oled2_departures)
 
         log_message(
-            "[ONLINE] get_online_rail_data() got oled1_departures "
+            "[ONLINE] get_online_rail_data() got oled1_departures " +
             f"(Platform {config.OLED1_PLATFORM_NUMBER}): {oled1_summary} " +
             f"and oled2_departures (Platform {config.OLED2_PLATFORM_NUMBER}): {oled2_summary}",
             level="DEBUG",
@@ -300,14 +302,15 @@ class RailData:
                 )  # Reset the retry delay
 
                 log_message(
-                    f"API request success. Next call in {self.api_retry_secs} seconds.",
+                    "cycle_get_online_rail_data() API request success. " + 
+                    f"Next call in {self.api_retry_secs} seconds.",
                     level="INFO",
                 )
-            except (OSError, ValueError, TypeError, MemoryError) as e:
+            except Exception as error: # pylint: disable=broad-except
                 self.api_fails += 1
                 self.api_retry_secs = min(5 * 2 ** (self.api_fails - 1), 180)
                 log_message(
-                    f"API request fail #{self.api_fails}: {e}. " +
+                    f"cycle_get_online_rail_data() API request fail #{self.api_fails}: {error}. " +
                     f"Next retry in {self.api_retry_secs} seconds.",
                     level="ERROR",
                 )

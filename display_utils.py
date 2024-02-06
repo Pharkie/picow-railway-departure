@@ -11,7 +11,7 @@ import asyncio
 import utime
 from micropython import const
 import config
-import utils_logger
+from utils_logger import log_message
 
 
 async def display_init_message_1screen(oled, screen_number, total_screens):
@@ -76,11 +76,19 @@ async def display_departure_line(oled, departure_number, destination, time_sched
     Side Effects:
     Updates the OLED display with the departure line.
     """
+    log_message(f"display_departure_line() showing train to {destination}", level="DEBUG")
     _max_length = const(12)
 
     # Split the destination into lines of up to max_length characters each, breaking
     # at word boundaries
     lines = wrap_text(destination, _max_length)
+
+
+    log_message(f"oled_lock: {oled.oled_lock.locked()}")
+
+    async with oled.oled_lock:
+        oled.fd_oled.print_str("ADAMTEST", 0, 0)
+        oled.show()
 
     while True:
         for line in lines:
@@ -93,7 +101,7 @@ async def display_departure_line(oled, departure_number, destination, time_sched
                 )  # Make room for time
                 oled.fd_oled.print_str(time_scheduled, 99, y_pos)
                 oled.show()
-                await asyncio.sleep(3)
+            await asyncio.sleep(3)
 
 
 async def display_first_departure(oled, first_departure):
@@ -107,7 +115,8 @@ async def display_first_departure(oled, first_departure):
     Side Effects:
     Updates the OLED display with the first departure data.
     """
-    # print(f"Displaying first departure for: {oled} = {departures}")
+    # log_message("display_first_departure() showing first departure: " +
+    #             f"{first_departure}", level="DEBUG")
 
     display_departure_task = asyncio.create_task(
         display_departure_line(
@@ -388,7 +397,7 @@ async def display_clock(oled):
 
             await asyncio.sleep(0.9)
         except Exception as error: # pylint: disable=broad-exception-caught
-            utils_logger.log_message(
+            log_message(
                 f"display_clock caught error, will try to ignore: {str(error)}",
                 level="ERROR",
             )
