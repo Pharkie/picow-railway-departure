@@ -84,17 +84,23 @@ async def display_departure_line(oled, departure_number, destination, time_sched
     lines = wrap_text(destination, _max_length)
 
     while True:
-        for line in lines:
-            await clear_line(oled, y_pos)
+        try: # Needs it's own exception handling since called via asyncio.create_task
+            for line in lines:
+                await clear_line(oled, y_pos)
 
-            async with oled.oled_lock:
-                oled.fd_oled.print_str(departure_number + line, 0, y_pos)
-                oled.fill_rect(
-                    97, y_pos, config.DISPLAY_WIDTH, config.THIN_LINE_HEIGHT, 0
-                )  # Make room for time
-                oled.fd_oled.print_str(time_scheduled, 99, y_pos)
-                oled.show()
-            await asyncio.sleep(3)
+                async with oled.oled_lock:
+                    oled.fd_oled.print_str(departure_number + line, 0, y_pos)
+                    oled.fill_rect(
+                        97, y_pos, config.DISPLAY_WIDTH, config.THIN_LINE_HEIGHT, 0
+                    )  # Make room for time
+                    oled.fd_oled.print_str(time_scheduled, 99, y_pos)
+                    oled.show()
+                await asyncio.sleep(3)
+        except Exception as error: # pylint: disable=broad-exception-caught
+            log_message(
+                f"display_departure_line() caught error, will try to ignore: {str(error)}",
+                level="ERROR",
+            )
 
 
 async def display_first_departure(oled, first_departure):
