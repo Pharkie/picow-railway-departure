@@ -19,7 +19,7 @@ import config
 import credentials
 from utils_logger import log_message
 import aws_api
-import display_utils
+# import display_utils
 
 
 class RailData:

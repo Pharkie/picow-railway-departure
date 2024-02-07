@@ -84,24 +84,18 @@ async def display_departure_line(oled, departure_number, destination, time_sched
     lines = wrap_text(destination, _max_length)
 
     while True:
-        try: # Needs it's own exception handling since called via asyncio.create_task
-            for line in lines:
-                await clear_line(oled, y_pos)
+        # Don't do exception handling here, let it bubble up to the main loop
+        for line in lines:
+            await clear_line(oled, y_pos)
 
-                async with oled.oled_lock:
-                    oled.fd_oled.print_str(departure_number + line, 0, y_pos)
-                    oled.fill_rect(
-                        97, y_pos, config.DISPLAY_WIDTH, config.THIN_LINE_HEIGHT, 0
-                    )  # Make room for time
-                    oled.fd_oled.print_str(time_scheduled, 99, y_pos)
-                    oled.show()
-                await asyncio.sleep(3)
-        except Exception as error: # pylint: disable=broad-exception-caught
-            log_message(
-                f"display_departure_line() caught error: {str(error)}",
-                level="ERROR",
-            )
-            break # Exit rather than just endlessly retrying
+            async with oled.oled_lock:
+                oled.fd_oled.print_str(departure_number + line, 0, y_pos)
+                oled.fill_rect(
+                    97, y_pos, config.DISPLAY_WIDTH, config.THIN_LINE_HEIGHT, 0
+                )  # Make room for time
+                oled.fd_oled.print_str(time_scheduled, 99, y_pos)
+                oled.show()
+            await asyncio.sleep(3)
 
 
 async def display_first_departure(oled, first_departure):
@@ -374,34 +368,29 @@ async def display_clock(oled):
     time_format = "{:02d}:{:02d}:{:02d}"
     offline_string = "[offline]"
 
+    # Don't do Exception handling here, let it bubble up to the main loop
     while True:
-        try:
-            current_time = utime.localtime()
-            current_seconds = utime.time()
+        current_time = utime.localtime()
+        current_seconds = utime.time()
 
-            async with oled.oled_lock:
-                # Clear where the time is displayed without clearing whole line to save time (?)
-                oled.fill_rect(40, config.THIN_LINETHREE_Y, 80, config.THIN_LINE_HEIGHT, 0)
+        async with oled.oled_lock:
+            # Clear where the time is displayed without clearing whole line to save time (?)
+            oled.fill_rect(40, config.THIN_LINETHREE_Y, 80, config.THIN_LINE_HEIGHT, 0)
 
-                # offline_string_turn is true for 2 seconds every 15 seconds
-                offline_string_turn = config.OFFLINE_MODE and current_seconds % 15 < 2
+            # offline_string_turn is true for 2 seconds every 15 seconds
+            offline_string_turn = config.OFFLINE_MODE and current_seconds % 15 < 2
 
-                if offline_string_turn:
-                    oled.fd_oled.print_str(offline_string, 40, config.THIN_LINETHREE_Y)
-                else:
-                    clock_string = time_format.format(
-                        current_time[3], current_time[4], current_time[5]
-                    )
-                    oled.fd_oled.print_str(clock_string, 46, config.THIN_LINETHREE_Y)
+            if offline_string_turn:
+                oled.fd_oled.print_str(offline_string, 40, config.THIN_LINETHREE_Y)
+            else:
+                clock_string = time_format.format(
+                    current_time[3], current_time[4], current_time[5]
+                )
+                oled.fd_oled.print_str(clock_string, 46, config.THIN_LINETHREE_Y)
 
-                oled.show()
+            oled.show()
 
-            await asyncio.sleep(0.9)
-        except Exception as error: # pylint: disable=broad-exception-caught
-            log_message(
-                f"display_clock caught error, will try to ignore: {str(error)}",
-                level="ERROR",
-            )
+        await asyncio.sleep(0.9)
 
 
 async def display_travel_alert(oled, alert_message):
