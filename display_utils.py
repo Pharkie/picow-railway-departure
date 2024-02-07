@@ -14,10 +14,6 @@ import config
 from utils_logger import log_message
 
 
-def handle_exception(task):
-    if task.exception():
-        print(f"Caught exception: {task.exception()}")
-
 async def display_init_message_1screen(oled, screen_number, total_screens):
     """
     Displays an initialization message on a single screen of the OLED display.
@@ -105,7 +101,7 @@ async def display_departure_line(oled, departure_number, destination, time_sched
                 f"display_departure_line() caught error: {str(error)}",
                 level="ERROR",
             )
-            raise # Exit rather than just endlessly retrying
+            break # Exit rather than just endlessly retrying
 
 
 async def display_first_departure(oled, first_departure):
@@ -131,7 +127,7 @@ async def display_first_departure(oled, first_departure):
             config.LINEONE_Y,
         )
     )
-    display_departure_task.add_done_callback(handle_exception)
+
     await asyncio.sleep(3)
 
     time_estimated = first_departure["time_estimated"]
@@ -178,7 +174,7 @@ async def display_second_departure(oled, second_departure):
             config.THIN_LINETWO_Y,
         )
     )
-    display_departure_task.add_done_callback(handle_exception)
+
     await asyncio.sleep(6)
 
     if display_departure_task:

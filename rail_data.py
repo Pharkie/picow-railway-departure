@@ -232,31 +232,35 @@ class RailData:
         """
         self.get_rail_data_count += 1
         log_message(
-            f"get_online_rail_data() call {self.get_rail_data_count}. ",
+            f"get_online_rail_data() Updating trains call {self.get_rail_data_count}. ",
             level="DEBUG",
         )
 
-        # Save the current screen contents
-        async with oled1.oled_lock:
-            oled1_before = oled1.save_buffer()
-        async with oled2.oled_lock:
-            oled2_before = oled2.save_buffer()
+        response_json = await self.fetch_data_from_api()
+        self.parse_rail_data(response_json)
 
-        await display_utils.both_screen_text(oled1, oled2, "Updating trains", 12)
+        # This code, interrupting the OLEDs, seems to cause crashes.
+        # # Save the current screen contents
+        # async with oled1.oled_lock:
+        #     oled1_before = oled1.save_buffer()
+        # async with oled2.oled_lock:
+        #     oled2_before = oled2.save_buffer()
 
-        # Prevent updates to the screen while we're updating the data
-        async with oled1.oled_lock:
-            async with oled2.oled_lock:
-                response_json = await self.fetch_data_from_api()
+        # await display_utils.both_screen_text(oled1, oled2, "Updating trains", 12)
 
-                self.parse_rail_data(response_json)
-                gc.collect()
+        # # Prevent updates to the screen while we're updating the data
+        # async with oled1.oled_lock:
+        #     async with oled2.oled_lock:
+        #         response_json = await self.fetch_data_from_api()
 
-                # Restore the displays
-                oled1.restore_buffer(oled1_before)
-                oled1.show()
-                oled2.restore_buffer(oled2_before)
-                oled2.show()
+        #         self.parse_rail_data(response_json)
+        #         gc.collect()
+
+        #         # Restore the displays
+        #         oled1.restore_buffer(oled1_before)
+        #         oled1.show()
+        #         oled2.restore_buffer(oled2_before)
+        #         oled2.show()
 
         oled1_summary = self.get_departure_summary(self.oled1_departures)
         oled2_summary = self.get_departure_summary(self.oled2_departures)
