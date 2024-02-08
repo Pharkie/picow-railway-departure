@@ -113,8 +113,21 @@ def setup_displays():
     setup_oled1, setup_oled2: The initialized OLED display objects. If a display failed to
     initialize, its value will be None.
     """
-    i2c_oled1 = I2C(0, scl=config.OLED1_SCL_PIN, sda=config.OLED1_SDA_PIN, freq=100000, timeout=100000)
-    i2c_oled2 = I2C(1, scl=config.OLED2_SCL_PIN, sda=config.OLED2_SDA_PIN, freq=100000, timeout=100000)
+    i2c_oled1 = I2C(
+        0, 
+        scl=config.OLED1_SCL_PIN, 
+        sda=config.OLED1_SDA_PIN, 
+        freq=100000, 
+        timeout=100000
+    )
+
+    i2c_oled2 = I2C(
+        1, 
+        scl=config.OLED2_SCL_PIN, 
+        sda=config.OLED2_SDA_PIN, 
+        freq=100000, 
+        timeout=100000
+    )
 
     setup_oled1 = initialize_oled(i2c_oled1, "oled1")
     setup_oled2 = initialize_oled(i2c_oled2, "oled2")
@@ -170,7 +183,7 @@ async def cycle_oled(oled, rail_data_instance, screen_number):
                 departures = None
 
                 # if screen_number == 1: # Not used/replaced
-                    # departures = rail_data_instance.oled1_departures 
+                    # departures = rail_data_instance.oled1_departures
                 if screen_number == 2:
                     departures = rail_data_instance.oled2_departures
 
