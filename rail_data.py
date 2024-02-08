@@ -247,7 +247,7 @@ class RailData:
             level="DEBUG",
         )
 
-    async def cycle_get_online_rail_data(self, oled1, oled2):
+    async def cycle_get_online_rail_data(self):
         """
         Continuously updates rail data from the API at a specified interval.
 
@@ -439,9 +439,6 @@ async def main():
     log_message("\n\n[Program started]\n")
     log_message(f"Using API: {config.API_SOURCE}")
 
-    # Initiliase to None since not used? No, this need to be set.
-    oled1, oled2 = None, None
-
     if utils.is_wifi_connected():
         ntptime.settime()
         rail_data_instance = RailData()
@@ -449,7 +446,7 @@ async def main():
         loop_counter = 0
 
         await rail_data_instance.get_online_rail_data()
-        asyncio.create_task(rail_data_instance.cycle_get_online_rail_data(oled1, oled2))
+        asyncio.create_task(rail_data_instance.cycle_get_online_rail_data())
 
         while True:
             loop_counter += 1

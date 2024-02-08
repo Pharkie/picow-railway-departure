@@ -269,14 +269,14 @@ async def main():
     else:
         try:
             # If this first API call fails, the program exits, since it has nothing to show.
-            await rail_data_instance.get_online_rail_data(oled1, oled2)
+            await rail_data_instance.get_online_rail_data()
         except Exception as caught_error: # pylint: disable=broad-exception-caught
             log_message(
                 f"First API call failed. Exiting program: {caught_error}",
                 level="ERROR",
             )
             raise
-        asyncio.create_task(rail_data_instance.cycle_get_online_rail_data(oled1, oled2))
+        asyncio.create_task(rail_data_instance.cycle_get_online_rail_data())
 
     asyncio.create_task(cycle_oled(oled1, rail_data_instance, 1))
     if oled2:
