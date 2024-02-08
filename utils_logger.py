@@ -45,8 +45,11 @@ def log_message(message, level="INFO"):
         try:
             if os.stat(log_filename)[6] > max_log_size:
                 # If the log file is too big, rotate it.
-                log_message_str += f"\nRotating log file {log_filename}. " + \
+                rotate_message = f"Rotating log file {log_filename}. " + \
                 f"Max log size: {max_log_size} bytes, max rotated log files: {max_log_files}\n"
+
+                with open(log_filename, "a", encoding="utf-8") as log_file:
+                    log_file.write(rotate_message)
 
                 try:
                     os.remove(f"{log_filename}.{max_log_files}")
@@ -59,8 +62,11 @@ def log_message(message, level="INFO"):
                         pass
                 os.rename(log_filename, f"{log_filename}.1")
         except OSError:
-            pass
+            print(f"Error rotating log file: {e}")
 
-        with open(log_filename, "a", encoding="utf-8") as log_file:
-            log_file.write(log_message_str)
+        try:
+            with open(log_filename, "a", encoding="utf-8") as log_file:
+                log_file.write(log_message_str)
+        except OSError as e:
+            print(f"Error writing to log file: {e}")
             

@@ -216,7 +216,7 @@ class RailData:
             level="INFO",
         )
 
-    async def get_online_rail_data(self, oled1, oled2):
+    async def get_online_rail_data(self):
         """
         Asynchronously fetches rail data from the API and updates the OLED displays.
 
@@ -224,10 +224,6 @@ class RailData:
         saves the current screen contents, displays a message on both screens, fetches the
         rail data from the API, parses the rail data, collects garbage, restores the displays,
         gets the departure summary for both displays, and logs the departure summaries.
-
-        Parameters:
-        oled1 (SSD1306_I2C): The first OLED display object.
-        oled2 (SSD1306_I2C): The second OLED display object.
 
         Raises:
         OSError: If there is a system-level error.
@@ -240,29 +236,6 @@ class RailData:
 
         response_json = await self.fetch_data_from_api()
         self.parse_rail_data(response_json)
-
-        # This code, interrupting the OLEDs, seems to cause crashes.
-        # # Save the current screen contents
-        # async with oled1.oled_lock:
-        #     oled1_before = oled1.save_buffer()
-        # async with oled2.oled_lock:
-        #     oled2_before = oled2.save_buffer()
-
-        # await display_utils.both_screen_text(oled1, oled2, "Updating trains", 12)
-
-        # # Prevent updates to the screen while we're updating the data
-        # async with oled1.oled_lock:
-        #     async with oled2.oled_lock:
-        #         response_json = await self.fetch_data_from_api()
-
-        #         self.parse_rail_data(response_json)
-        #         gc.collect()
-
-        #         # Restore the displays
-        #         oled1.restore_buffer(oled1_before)
-        #         oled1.show()
-        #         oled2.restore_buffer(oled2_before)
-        #         oled2.show()
 
         oled1_summary = self.get_departure_summary(self.oled1_departures)
         oled2_summary = self.get_departure_summary(self.oled2_departures)
@@ -299,7 +272,7 @@ class RailData:
             await asyncio.sleep(self.api_retry_secs)
 
             try:
-                await self.get_online_rail_data(oled1, oled2)
+                await self.get_online_rail_data()
 
                 # If we get here, the API call succeeded
                 self.api_fails = 0  # Reset the failure counter
@@ -475,7 +448,7 @@ async def main():
 
         loop_counter = 0
 
-        await rail_data_instance.get_online_rail_data(oled1, oled2)
+        await rail_data_instance.get_online_rail_data()
         asyncio.create_task(rail_data_instance.cycle_get_online_rail_data(oled1, oled2))
 
         while True:

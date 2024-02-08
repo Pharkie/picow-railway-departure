@@ -11,7 +11,7 @@ import asyncio
 import utime
 from micropython import const
 import config
-from utils_logger import log_message
+# from utils_logger import log_message
 
 
 async def display_init_message_1screen(oled, screen_number, total_screens):

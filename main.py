@@ -114,18 +114,18 @@ def setup_displays():
     initialize, its value will be None.
     """
     i2c_oled1 = I2C(
-        0, 
-        scl=config.OLED1_SCL_PIN, 
-        sda=config.OLED1_SDA_PIN, 
-        freq=100000, 
+        0,
+        scl=config.OLED1_SCL_PIN,
+        sda=config.OLED1_SDA_PIN,
+        freq=100000,
         timeout=100000
     )
 
     i2c_oled2 = I2C(
-        1, 
-        scl=config.OLED2_SCL_PIN, 
-        sda=config.OLED2_SDA_PIN, 
-        freq=100000, 
+        1,
+        scl=config.OLED2_SCL_PIN,
+        sda=config.OLED2_SDA_PIN,
+        freq=100000,
         timeout=100000
     )
 
@@ -171,11 +171,6 @@ async def cycle_oled(oled, rail_data_instance, screen_number):
                         config.THIN_LINETWO_Y,
                     )
                     oled.show()
-
-                # Not needed? Test suggests Pico reconnects if wifi is down then back up.
-                # if not utils.is_wifi_connected():
-                #     log_message("Wifi disconnected. Reconnecting.")
-                #     utils.connect_wifi()
 
                 # No point rerunning this code every 3 seconds, so every 30.
                 await asyncio.sleep(27)
