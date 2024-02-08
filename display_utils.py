@@ -98,54 +98,78 @@ async def display_departure_line(oled, departure_number, destination, time_sched
             await asyncio.sleep(3)
 
 
-async def display_first_departure(oled, first_departure):
+async def display_first_departure(oled, rail_data_instance, screen_number):
     """
     Asynchronously displays the first departure on the OLED display.
 
     Parameters:
     oled (OLED): The OLED display object.
-    first_departure (dict): The first departure data to display.
+    rail_data_instance (RailDataInstance): The rail data instance.
+    screen_number (int): The screen number.
 
     Side Effects:
     Updates the OLED display with the first departure data.
     """
-    # log_message("display_first_departure() showing first departure: " +
-    #             f"{first_departure}", level="DEBUG")
+    first_departure = None
+    first_departure_task = None
 
-    display_departure_task = asyncio.create_task(
-        display_departure_line(
-            oled,
-            "1 ",
-            first_departure["destination"],
-            first_departure["time_scheduled"],
-            config.LINEONE_Y,
+    if screen_number == 1:
+        first_departure = rail_data_instance.oled1_departures[0]
+        first_departure_task = rail_data_instance.oled1_first_departure_task
+    elif screen_number == 2:
+        first_departure = rail_data_instance.oled2_departures[0]
+        first_departure_task = rail_data_instance.oled2_first_departure_task
+
+    # If a display_first_departure_task is already running, cancel it
+    if first_departure_task:
+        first_departure_task.cancel()
+        try:
+            await first_departure_task
+        except asyncio.CancelledError:
+            pass
+
+    if first_departure:
+        new_task = asyncio.create_task(
+            display_departure_line(
+                oled,
+                "1 ",
+                first_departure["destination"],
+                first_departure["time_scheduled"],
+                config.LINEONE_Y,
+            )
         )
-    )
 
-    await asyncio.sleep(3)
+        if screen_number == 1:
+            rail_data_instance.oled1_first_departure_task = new_task
+        elif screen_number == 2:
+            rail_data_instance.oled2_first_departure_task = new_task
 
-    time_estimated = first_departure["time_estimated"]
+        await asyncio.sleep(3)
 
-    await clear_line(oled, config.THICK_LINETWO_Y)
+        time_estimated = first_departure["time_estimated"]
 
-    # Second line: show "on time" or estimated time
-    if time_estimated == "On time":
-        await display_centred_text(oled, "Due on time", config.THICK_LINETWO_Y)
-    else:
-        await display_centred_text(oled, f"Now due: {time_estimated}", config.THICK_LINETWO_Y)
+        await clear_line(oled, config.THICK_LINETWO_Y)
 
-    await asyncio.sleep(3)
-    await clear_line(oled, config.THIN_LINETWO_Y)
-    await asyncio.sleep(2)
+        # Second line: show "on time" or estimated time
+        if time_estimated == "On time":
+            await display_centred_text(oled, "Due on time", config.THICK_LINETWO_Y)
+        else:
+            await display_centred_text(oled, f"Now due: {time_estimated}", config.THICK_LINETWO_Y)
 
-    # Second line: scroll the calling points
-    await scroll_text(
-        oled, format_calling_points(first_departure), config.THIN_LINETWO_Y
-    )
-    await asyncio.sleep(3)
+        await asyncio.sleep(3)
+        await clear_line(oled, config.THIN_LINETWO_Y)
+        await asyncio.sleep(2)
 
-    if display_departure_task:
-        display_departure_task.cancel()
+        # Second line: scroll the calling points
+        await scroll_text(
+            oled, format_calling_points(first_departure), config.THIN_LINETWO_Y
+        )
+        await asyncio.sleep(3)
+
+        if screen_number == 1 and rail_data_instance.oled1_first_departure_task:
+            rail_data_instance.oled1_first_departure_task.cancel()
+        elif screen_number == 2 and rail_data_instance.oled2_first_departure_task:
+            rail_data_instance.oled2_first_departure_task.cancel()
 
 
 async def display_second_departure(oled, second_departure):
@@ -373,22 +397,23 @@ async def display_clock(oled):
         current_time = utime.localtime()
         current_seconds = utime.time()
 
-        async with oled.oled_lock:
-            # Clear where the time is displayed without clearing whole line to save time (?)
-            oled.fill_rect(40, config.THIN_LINETHREE_Y, 80, config.THIN_LINE_HEIGHT, 0)
+        # async with oled.oled_lock:
+        # Clear where the time is displayed without clearing whole line to save time (?)
+        oled.fill_rect(40, config.THIN_LINETHREE_Y, 80, config.THIN_LINE_HEIGHT, 0)
 
-            # offline_string_turn is true for 2 seconds every 15 seconds
-            offline_string_turn = config.OFFLINE_MODE and current_seconds % 15 < 2
+        # offline_string_turn is true for 2 seconds every 15 seconds
+        offline_string_turn = config.OFFLINE_MODE and current_seconds % 15 < 2
 
-            if offline_string_turn:
-                oled.fd_oled.print_str(offline_string, 40, config.THIN_LINETHREE_Y)
-            else:
-                clock_string = time_format.format(
-                    current_time[3], current_time[4], current_time[5]
-                )
-                oled.fd_oled.print_str(clock_string, 46, config.THIN_LINETHREE_Y)
+        if offline_string_turn:
+            oled.fd_oled.print_str(offline_string, 40, config.THIN_LINETHREE_Y)
+        else:
+            clock_string = time_format.format(
+                current_time[3], current_time[4], current_time[5]
+            )
+            # log_message(f"display_clock() updating {oled}", level="DEBUG")
+            oled.fd_oled.print_str(clock_string, 46, config.THIN_LINETHREE_Y)
 
-            oled.show()
+        oled.show()
 
         await asyncio.sleep(0.9)
 

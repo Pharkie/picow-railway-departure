@@ -59,6 +59,8 @@ class RailData:
         self.get_rail_data_count = 0
         self.api_fails = 0
         self.api_retry_secs = config.BASE_API_UPDATE_INTERVAL
+        self.oled1_first_departure_task = None # Prevent two tasks running at once
+        self.oled2_first_departure_task = None
 
     async def fetch_data_from_api(self):
         """
