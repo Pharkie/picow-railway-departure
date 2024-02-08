@@ -7,6 +7,7 @@ Description: Config variables for main program.
 GitHub Repository: https://github.com/Pharkie/picow-railway-departure
 License: GNU General Public License (GPL)
 """
+
 # Using const() to save memory wherever values will not change during
 # execution (not needed for strings).
 import re
@@ -19,8 +20,8 @@ def parse_url(url):
     """
     Parses a URL into its components.
 
-    This function uses a regular expression to parse the URL into its components: protocol, 
-    host, URI, and query string. If the URL does not match the regular expression, a ValueError 
+    This function uses a regular expression to parse the URL into its components: protocol,
+    host, URI, and query string. If the URL does not match the regular expression, a ValueError
     is raised.
 
     Parameters:
@@ -110,8 +111,12 @@ AWS_API_ID = host_parts[0]
 AWS_API_SERVICE = host_parts[1]
 AWS_API_REGION = host_parts[2]
 
-BASE_API_UPDATE_INTERVAL = const(60)  # Default update interval for rail data in seconds.
-DATA_OUTDATED_SECS = const(80)  # Rail data considered unusuable after this many seconds.
+BASE_API_UPDATE_INTERVAL = const(
+    60
+)  # Default update interval for rail data in seconds.
+DATA_OUTDATED_SECS = const(
+    80
+)  # Rail data considered unusuable after this many seconds.
 
 # OLED screen params (SSD1306)
 LINEONE_Y = const(0)

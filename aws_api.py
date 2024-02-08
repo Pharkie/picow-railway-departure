@@ -7,10 +7,12 @@ Description: Interface with AWS API. Signs a request with AWS credentials and an
 GitHub Repository: https://github.com/Pharkie/picow-railway-departure
 License: GNU General Public License (GPL)
 """
+
 import hmac
 import hashlib
+
 # import json
-import ubinascii # pylint: disable=import-error
+import ubinascii  # pylint: disable=import-error
 import utime
 import requests
 import config
@@ -74,7 +76,9 @@ def create_signed_headers(
 
     # Prepare canonical request
     canonical_querystring = query_string
-    canonical_headers = "host:" + api_host + "\n" + "x-amz-date:" + amz_date + "\n"
+    canonical_headers = (
+        "host:" + api_host + "\n" + "x-amz-date:" + amz_date + "\n"
+    )
     signed_headers = "host;x-amz-date"
     payload = ""  # GET requests don't usually have a payload
     payload_hash = ubinascii.hexlify(
@@ -99,7 +103,9 @@ def create_signed_headers(
 
     # Prepare string to sign
     algorithm = "AWS4-HMAC-SHA256"
-    credential_scope = date_stamp + "/" + region + "/" + service + "/" + "aws4_request"
+    credential_scope = (
+        date_stamp + "/" + region + "/" + service + "/" + "aws4_request"
+    )
     string_to_sign = (
         algorithm
         + "\n"
@@ -173,7 +179,7 @@ def sign(key, msg):
 
 def main():
     """
-    Test this module. 
+    Test this module.
     Sends a request to the AWS API and prints the response.
 
     The request is signed with AWS credentials and an API key. The HTTP method and payload can be
@@ -203,9 +209,13 @@ def main():
         if http_method == "GET":
             response = requests.get(config.AWS_API_URL, headers=headers)
         elif http_method == "POST":
-            response = requests.post(config.AWS_API_URL, headers=headers, data=payload)
+            response = requests.post(
+                config.AWS_API_URL, headers=headers, data=payload
+            )
         elif http_method == "PUT":
-            response = requests.put(config.AWS_API_URL, headers=headers, data=payload)
+            response = requests.put(
+                config.AWS_API_URL, headers=headers, data=payload
+            )
         elif http_method == "DELETE":
             response = requests.delete(config.AWS_API_URL, headers=headers)
         else:

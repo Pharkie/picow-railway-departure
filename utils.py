@@ -104,7 +104,8 @@ async def connect_wifi(oled1=None, oled2=None):
 
         if not wlan.isconnected():
             log_message(
-                f"Wifi not connected: timed out. wlan.status: {wlan.status()}", "ERROR"
+                f"Wifi not connected: timed out. wlan.status: {wlan.status()}",
+                "ERROR",
             )
             await display_utils.both_screen_text(
                 oled1,

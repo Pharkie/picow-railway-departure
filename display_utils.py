@@ -7,10 +7,12 @@ Description: Display utils for the Pico departure boards
 GitHub Repository: https://github.com/Pharkie/picow-railway-departure
 License: GNU General Public License (GPL)
 """
+
 import asyncio
 import utime
 from micropython import const
 import config
+
 # from utils_logger import log_message
 
 
@@ -59,10 +61,14 @@ async def display_init_message(oled1, oled2):
 
     for screen_number, oled in enumerate((oled1, oled2), start=1):
         if oled:
-            await display_init_message_1screen(oled, screen_number, total_screens)
+            await display_init_message_1screen(
+                oled, screen_number, total_screens
+            )
 
 
-async def display_departure_line(oled, departure_number, destination, time_scheduled, y_pos):
+async def display_departure_line(
+    oled, departure_number, destination, time_scheduled, y_pos
+):
     """
     Asynchronously displays a departure line on the OLED display.
 
@@ -98,7 +104,9 @@ async def display_departure_line(oled, departure_number, destination, time_sched
             await asyncio.sleep(3)
 
 
-async def display_first_departure(oled, rail_data_instance, screen_number):
+async def display_first_departure(
+    oled, first_departure, rail_data_instance, screen_number
+):
     """
     Asynchronously displays the first departure on the OLED display.
 
@@ -110,14 +118,11 @@ async def display_first_departure(oled, rail_data_instance, screen_number):
     Side Effects:
     Updates the OLED display with the first departure data.
     """
-    first_departure = None
     first_departure_task = None
 
     if screen_number == 1:
-        first_departure = rail_data_instance.oled1_departures[0]
         first_departure_task = rail_data_instance.oled1_first_departure_task
     elif screen_number == 2:
-        first_departure = rail_data_instance.oled2_departures[0]
         first_departure_task = rail_data_instance.oled2_first_departure_task
 
     # If a display_first_departure_task is already running, cancel it
@@ -152,9 +157,13 @@ async def display_first_departure(oled, rail_data_instance, screen_number):
 
         # Second line: show "on time" or estimated time
         if time_estimated == "On time":
-            await display_centred_text(oled, "Due on time", config.THICK_LINETWO_Y)
+            await display_centred_text(
+                oled, "Due on time", config.THICK_LINETWO_Y
+            )
         else:
-            await display_centred_text(oled, f"Now due: {time_estimated}", config.THICK_LINETWO_Y)
+            await display_centred_text(
+                oled, f"Now due: {time_estimated}", config.THICK_LINETWO_Y
+            )
 
         await asyncio.sleep(3)
         await clear_line(oled, config.THIN_LINETWO_Y)
@@ -168,7 +177,9 @@ async def display_first_departure(oled, rail_data_instance, screen_number):
 
         if screen_number == 1 and rail_data_instance.oled1_first_departure_task:
             rail_data_instance.oled1_first_departure_task.cancel()
-        elif screen_number == 2 and rail_data_instance.oled2_first_departure_task:
+        elif (
+            screen_number == 2 and rail_data_instance.oled2_first_departure_task
+        ):
             rail_data_instance.oled2_first_departure_task.cancel()
 
 
@@ -212,7 +223,9 @@ async def display_no_departures(oled):
 
     async with oled.oled_lock:
         oled.fd_oled.print_str(
-            line1_message, centre_x(line1_message, config.THIN_CHAR_WIDTH), config.LINEONE_Y
+            line1_message,
+            centre_x(line1_message, config.THIN_CHAR_WIDTH),
+            config.LINEONE_Y,
         )
 
         line2_message = "in next 2 hours"
@@ -399,7 +412,9 @@ async def display_clock(oled):
 
         # async with oled.oled_lock:
         # Clear where the time is displayed without clearing whole line to save time (?)
-        oled.fill_rect(40, config.THIN_LINETHREE_Y, 80, config.THIN_LINE_HEIGHT, 0)
+        oled.fill_rect(
+            40, config.THIN_LINETHREE_Y, 80, config.THIN_LINE_HEIGHT, 0
+        )
 
         # offline_string_turn is true for 2 seconds every 15 seconds
         offline_string_turn = config.OFFLINE_MODE and current_seconds % 15 < 2
@@ -439,7 +454,9 @@ async def display_travel_alert(oled, alert_message):
     # Flash the alert text before displaying the message
     for _ in range(2):
         async with oled.oled_lock:
-            oled.fd_oled.print_str(preroll_text, preroll_centre_x, config.LINEONE_Y)
+            oled.fd_oled.print_str(
+                preroll_text, preroll_centre_x, config.LINEONE_Y
+            )
             oled.show()
         await asyncio.sleep(0.5)
         await clear_line(oled, config.LINEONE_Y)
@@ -461,7 +478,9 @@ async def display_travel_alert(oled, alert_message):
                 screens.append(screen)
                 screen = []
 
-        line += " " + word if line else word  # Add space only if line is not empty
+        line += (
+            " " + word if line else word
+        )  # Add space only if line is not empty
 
     # Add the last line and screen if they're not empty
     if line:
@@ -480,7 +499,9 @@ async def display_travel_alert(oled, alert_message):
         async with oled.oled_lock:
             oled.show()  # Update the display
 
-        await asyncio.sleep(3)  # Wait 3 seconds without yielding to the event loop
+        await asyncio.sleep(
+            3
+        )  # Wait 3 seconds without yielding to the event loop
 
     oled.fill(0)
 

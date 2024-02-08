@@ -8,6 +8,7 @@ and updates the data periodically.
 GitHub Repository: https://github.com/Pharkie/picow-railway-departure
 License: GNU General Public License (GPL)
 """
+
 import re
 import asyncio
 import gc
@@ -19,6 +20,7 @@ import config
 import credentials
 from utils_logger import log_message
 import aws_api
+
 # import display_utils
 
 
@@ -59,7 +61,9 @@ class RailData:
         self.get_rail_data_count = 0
         self.api_fails = 0
         self.api_retry_secs = config.BASE_API_UPDATE_INTERVAL
-        self.oled1_first_departure_task = None # Prevent two tasks running at once
+        self.oled1_first_departure_task = (
+            None  # Prevent two tasks running at once
+        )
         self.oled2_first_departure_task = None
 
     async def fetch_data_from_api(self):
@@ -72,7 +76,7 @@ class RailData:
         the JSON data.
 
         Raises:
-        OSError: If wifi is not connected, there is no response from the API or 
+        OSError: If wifi is not connected, there is no response from the API or
         if the response status code is not in the range 200-299.
 
         Returns:
@@ -112,29 +116,35 @@ class RailData:
 
                 # Timeout should raise an OSError exception
                 response = requests.get(
-                    url=config.AWS_API_URL, headers=rail_data_headers, timeout=10
+                    url=config.AWS_API_URL,
+                    headers=rail_data_headers,
+                    timeout=10,
                 )
 
             if not response:
-                log_message("fetch_data_from_api() No response from API", level="ERROR")
+                log_message(
+                    "fetch_data_from_api() No response from API", level="ERROR"
+                )
                 raise OSError("No response from API")
 
             if response.status_code < 200 or response.status_code >= 300:
                 log_message(
-                    "fetch_data_from_api() HTTP request failed. " +
-                    f"Status code {response.status_code}. " +
-                    f"Contents: {response.text[:200]}",
+                    "fetch_data_from_api() HTTP request failed. "
+                    + f"Status code {response.status_code}. "
+                    + f"Contents: {response.text[:200]}",
                     level="ERROR",
                 )
                 raise OSError(
-                    "fetch_data_from_api() HTTP request failed. " +
-                    f"Status code {response.status_code}. " +
-                    f"Contents: {response.text[:200]}"
+                    "fetch_data_from_api() HTTP request failed. "
+                    + f"Status code {response.status_code}. "
+                    + f"Contents: {response.text[:200]}"
                 )
 
             # Log the size of the response data in KB, rounded to 2 decimal places
-            log_message("fetch_data_from_api() got response:" +
-                        f" {round(len(response.content) / 1024, 2)} KB")
+            log_message(
+                "fetch_data_from_api() got response:"
+                + f" {round(len(response.content) / 1024, 2)} KB"
+            )
 
             json_data = ujson.loads(response.text)
 
@@ -185,8 +195,8 @@ class RailData:
         """
         self.get_rail_data_count += 1
         log_message(
-            f"get_offline_rail_data call {self.get_rail_data_count}. " +
-            f"Free memory: {gc.mem_free()}",  # pylint: disable=no-member
+            f"get_offline_rail_data call {self.get_rail_data_count}. "
+            + f"Free memory: {gc.mem_free()}",  # pylint: disable=no-member
             level="DEBUG",
         )
 
@@ -209,10 +219,10 @@ class RailData:
         oled2_summary = self.get_departure_summary(self.oled2_departures)
 
         log_message(
-            "[OFFLINE] get_offline_rail_data() got oled1_departures " +
-            f"(Platform {config.OLED1_PLATFORM_NUMBER}): {oled1_summary} " +
-            "and oled2_departures" +
-            f"(Platform {config.OLED2_PLATFORM_NUMBER}): {oled2_summary}",
+            "[OFFLINE] get_offline_rail_data() got oled1_departures "
+            + f"(Platform {config.OLED1_PLATFORM_NUMBER}): {oled1_summary} "
+            + "and oled2_departures"
+            + f"(Platform {config.OLED2_PLATFORM_NUMBER}): {oled2_summary}",
             level="INFO",
         )
 
@@ -241,9 +251,9 @@ class RailData:
         oled2_summary = self.get_departure_summary(self.oled2_departures)
 
         log_message(
-            "[ONLINE] get_online_rail_data() got oled1_departures " +
-            f"(Platform {config.OLED1_PLATFORM_NUMBER}): {oled1_summary} " +
-            f"and oled2_departures (Platform {config.OLED2_PLATFORM_NUMBER}): {oled2_summary}",
+            "[ONLINE] get_online_rail_data() got oled1_departures "
+            + f"(Platform {config.OLED1_PLATFORM_NUMBER}): {oled1_summary} "
+            + f"and oled2_departures (Platform {config.OLED2_PLATFORM_NUMBER}): {oled2_summary}",
             level="DEBUG",
         )
 
@@ -281,16 +291,16 @@ class RailData:
                 )  # Reset the retry delay
 
                 log_message(
-                    "cycle_get_online_rail_data() API request success. " + 
-                    f"Next call in {self.api_retry_secs} seconds.",
+                    "cycle_get_online_rail_data() API request success. "
+                    + f"Next call in {self.api_retry_secs} seconds.",
                     level="INFO",
                 )
-            except Exception as error: # pylint: disable=broad-except
+            except Exception as error:  # pylint: disable=broad-except
                 self.api_fails += 1
                 self.api_retry_secs = min(5 * 2 ** (self.api_fails - 1), 180)
                 log_message(
-                    f"cycle_get_online_rail_data() API request fail #{self.api_fails}: {error}. " +
-                    f"Next retry in {self.api_retry_secs} seconds.",
+                    f"cycle_get_online_rail_data() API request fail #{self.api_fails}: {error}. "
+                    + f"Next retry in {self.api_retry_secs} seconds.",
                     level="ERROR",
                 )
 
@@ -326,12 +336,18 @@ class RailData:
                     else calling_point.get("st")
                 ),
             )
-            for subsequent_calling_point in service.get("subsequentCallingPoints", [])
-            for calling_point in subsequent_calling_point.get("callingPoint", [])
+            for subsequent_calling_point in service.get(
+                "subsequentCallingPoints", []
+            )
+            for calling_point in subsequent_calling_point.get(
+                "callingPoint", []
+            )
         ]
 
         return {
-            "destination": service.get("destination", [{}])[0].get("locationName"),
+            "destination": service.get("destination", [{}])[0].get(
+                "locationName"
+            ),
             "time_scheduled": service.get("std"),
             "time_estimated": service.get("etd"),
             "operator": service.get("operator"),
@@ -395,19 +411,25 @@ class RailData:
 
                 # log(f"Train services: {json.dumps(train_services)}")  # Debug print
                 self.oled1_departures = (
-                    self.parse_departures(train_services, config.OLED1_PLATFORM_NUMBER)
+                    self.parse_departures(
+                        train_services, config.OLED1_PLATFORM_NUMBER
+                    )
                     if train_services
                     else []
                 )
 
                 self.oled2_departures = (
-                    self.parse_departures(train_services, config.OLED2_PLATFORM_NUMBER)
+                    self.parse_departures(
+                        train_services, config.OLED2_PLATFORM_NUMBER
+                    )
                     if train_services
                     else []
                 )
 
                 # Check if CUSTOM_TRAVEL_ALERT is defined in config.py
-                custom_travel_alert = getattr(config, "CUSTOM_TRAVEL_ALERT", None)
+                custom_travel_alert = getattr(
+                    config, "CUSTOM_TRAVEL_ALERT", None
+                )
                 if custom_travel_alert is not None:
                     self.nrcc_message = custom_travel_alert
                 else:

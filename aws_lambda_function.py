@@ -24,6 +24,7 @@ LDBWS_API_URL_BASE = (
     "/1010-live-departure-board-dep/LDBWS/api/20220120/GetDepBoardWithDetails/"
 )
 
+
 def keep_keys_in_dict(dict_del, keys):
     """
     Modifies the input dictionary in-place by removing keys that are not in the provided list.
@@ -44,13 +45,17 @@ def keep_keys_in_dict(dict_del, keys):
         if key not in keys_set and key not in keys_with_subkeys:
             del dict_del[key]
         elif isinstance(dict_del[key], dict):
-            subkeys = [k.split(".", 1)[1] for k in keys if k.startswith(key + ".")]
+            subkeys = [
+                k.split(".", 1)[1] for k in keys if k.startswith(key + ".")
+            ]
             keep_keys_in_dict(dict_del[key], subkeys)
         elif isinstance(dict_del[key], list):
             for item in dict_del[key]:
                 if isinstance(item, dict):
                     subkeys = [
-                        k.split(".", 1)[1] for k in keys if k.startswith(key + ".")
+                        k.split(".", 1)[1]
+                        for k in keys
+                        if k.startswith(key + ".")
                     ]
                     keep_keys_in_dict(item, subkeys)
                 elif isinstance(item, list):
@@ -123,21 +128,27 @@ def lambda_handler(event, _):
     for i in range(MAX_RETRIES):
         try:
             print(
-                f"[AWS] Starting attempt {i+1} of {MAX_RETRIES} to " +
-                "fetch rail data from RailData API."
+                f"[AWS] Starting attempt {i+1} of {MAX_RETRIES} to "
+                + "fetch rail data from RailData API."
             )
-            response = requests.get(ldbws_api_url, headers=request_headers, timeout=2)
+            response = requests.get(
+                ldbws_api_url, headers=request_headers, timeout=2
+            )
             # Raise an exception if the response contains an HTTP error status code
             response.raise_for_status()
             json_response = response.json()
-            nrcc_messages = json_response.get('nrccMessages')
-            if nrcc_messages: # Remove HTML tags from NRCC messages
+            nrcc_messages = json_response.get("nrccMessages")
+            if nrcc_messages:  # Remove HTML tags from NRCC messages
                 for message in nrcc_messages:
-                    message['Value'] = re.sub(r'<.*?>', '', message['Value'])
-                    message['Value'] = re.sub(r'\s+', ' ', message['Value']).strip()
+                    message["Value"] = re.sub(r"<.*?>", "", message["Value"])
+                    message["Value"] = re.sub(
+                        r"\s+", " ", message["Value"]
+                    ).strip()
             print(f"[AWS] Success: got RailData JSON back on attempt {i+1}.")
             break  # If the request was successful, break out of the loop
-        except requests.exceptions.RequestException as e: # pylint: disable=I1101 # type: ignore
+        except (
+            requests.exceptions.RequestException
+        ) as e:  # pylint: disable=I1101 # type: ignore
             print(
                 f"[AWS] [Error] On attempt {i+1} of {MAX_RETRIES} got error: {str(e)}."
             )
@@ -151,7 +162,9 @@ def lambda_handler(event, _):
                     ),
                 }
             else:  # Otherwise, log the error, wait for a while and continue to the next iteration
-                print(f"[AWS] Retrying RailData API in {DELAY_BETWEEN_RETRIES} seconds")
+                print(
+                    f"[AWS] Retrying RailData API in {DELAY_BETWEEN_RETRIES} seconds"
+                )
                 time.sleep(DELAY_BETWEEN_RETRIES)
 
     # Filter services based on platform and only include specific fields
@@ -174,7 +187,8 @@ def lambda_handler(event, _):
     if json_response is not None:
         for service in json_response.get("trainServices", []):
             if platform_numbers is None or (
-                service.get("platform") and service.get("platform") in platform_numbers
+                service.get("platform")
+                and service.get("platform") in platform_numbers
             ):
                 keep_keys_in_dict(service, keys_to_keep)
                 filtered_services.append(service)
@@ -192,16 +206,17 @@ def lambda_handler(event, _):
     # Flatten the dictionary to a list
     # print("[AWS] Flattening the dictionary to a list.")
     filtered_services = [
-        service for services in platform_services.values() for service in services
+        service
+        for services in platform_services.values()
+        for service in services
     ]
 
     # print(f"[AWS] Final list of services to send as response: {filtered_services}")
 
     # Return the filtered data inside the trainServices key
     return {
-        "statusCode": 200, 
-        "body": json.dumps({
-            "trainServices": filtered_services,
-            "nrccMessages": nrcc_messages
-        })
+        "statusCode": 200,
+        "body": json.dumps(
+            {"trainServices": filtered_services, "nrccMessages": nrcc_messages}
+        ),
     }

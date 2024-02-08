@@ -22,7 +22,7 @@ Also includes:
 - aws_lambda_function.py: Lambda function to use with AWS Lambda as an API intermediary.
 - sample_data.json: Sample data for offline mode, a JSON response saved from an API call.
 
-Known issues: 
+Known issues:
 - ETIMEDOUT sometimes happens and crashes prog. Fix attempted.
 
 """
@@ -51,17 +51,17 @@ def set_global_exception():
     sets the exception handler to the defined handler.
     """
 
-    def handle_exception(loop, context): # pylint: disable=unused-argument
-        exception = context.get('exception')
+    def handle_exception(loop, context):  # pylint: disable=unused-argument
+        exception = context.get("exception")
         s = io.StringIO()
-        sys.print_exception(exception, s) # type: ignore # pylint: disable=no-member
+        sys.print_exception(exception, s)  # type: ignore # pylint: disable=no-member
         traceback_str = s.getvalue()
         log_message(
-            f"Exiting. Caught unhandled global exception: {context['message']}, " +
-            f"Type: {type(exception).__name__}, " +
-            f"Details: {str(exception)}, " +
-            f"Traceback: {traceback_str}", 
-            level="ERROR"
+            f"Exiting. Caught unhandled global exception: {context['message']}, "
+            + f"Type: {type(exception).__name__}, "
+            + f"Details: {str(exception)}, "
+            + f"Traceback: {traceback_str}",
+            level="ERROR",
         )
         sys.exit()
 
@@ -118,7 +118,7 @@ def setup_displays():
         scl=config.OLED1_SCL_PIN,
         sda=config.OLED1_SDA_PIN,
         freq=100000,
-        timeout=100000
+        timeout=100000,
     )
 
     i2c_oled2 = I2C(
@@ -126,7 +126,7 @@ def setup_displays():
         scl=config.OLED2_SCL_PIN,
         sda=config.OLED2_SDA_PIN,
         freq=100000,
-        timeout=100000
+        timeout=100000,
     )
 
     setup_oled1 = initialize_oled(i2c_oled1, "oled1")
@@ -154,17 +154,21 @@ async def cycle_oled(oled, rail_data_instance, screen_number):
     """
     while True:
         try:
-            outdated_secs = max(config.DATA_OUTDATED_SECS, config.BASE_API_UPDATE_INTERVAL)
+            outdated_secs = max(
+                config.DATA_OUTDATED_SECS, config.BASE_API_UPDATE_INTERVAL
+            )
             if rail_data_instance.api_retry_secs >= outdated_secs:
-            # Sustained API failure.
-            # Time elapsed since update will be cumulative from time of failure
-            # eg 5+10+20+40=75 secs
-            # Number less than config.BASE_API_UPDATE_INTERVAL is ignored.
+                # Sustained API failure.
+                # Time elapsed since update will be cumulative from time of failure
+                # eg 5+10+20+40=75 secs
+                # Number less than config.BASE_API_UPDATE_INTERVAL is ignored.
                 await display_utils.clear_line(oled, config.LINEONE_Y)
                 await display_utils.clear_line(oled, config.THICK_LINETWO_Y)
 
                 async with oled.oled_lock:
-                    oled.fd_oled.print_str("Train update failed", 0, config.LINEONE_Y)
+                    oled.fd_oled.print_str(
+                        "Train update failed", 0, config.LINEONE_Y
+                    )
                     oled.fd_oled.print_str(
                         f"Retry in {rail_data_instance.api_retry_secs} secs",
                         0,
@@ -177,10 +181,16 @@ async def cycle_oled(oled, rail_data_instance, screen_number):
             else:
                 departures = None
 
-                # if screen_number == 1: # Not used/replaced
-                    # departures = rail_data_instance.oled1_departures
-                if screen_number == 2:
+                # Could get this from rail_data_instance but it's a bit more readable this way
+                if screen_number == 1:
+                    departures = rail_data_instance.oled1_departures
+                elif screen_number == 2:
                     departures = rail_data_instance.oled2_departures
+
+                # log_message(
+                #     f"SHOWING Screen {screen_number} departures: {departures}",
+                #     level="DEBUG"
+                # )
 
                 await display_utils.clear_line(oled, config.LINEONE_Y)
                 await display_utils.clear_line(oled, config.THICK_LINETWO_Y)
@@ -188,12 +198,15 @@ async def cycle_oled(oled, rail_data_instance, screen_number):
                 if departures:
                     await display_utils.display_first_departure(
                         oled,
-                        rail_data_instance = rail_data_instance,
-                        screen_number = screen_number
+                        departures[0],
+                        rail_data_instance=rail_data_instance,
+                        screen_number=screen_number,
                     )
 
                     if len(departures) > 1:
-                        await display_utils.display_second_departure(oled, departures[1])
+                        await display_utils.display_second_departure(
+                            oled, departures[1]
+                        )
                 else:
                     await display_utils.display_no_departures(oled)
 
@@ -203,11 +216,12 @@ async def cycle_oled(oled, rail_data_instance, screen_number):
                     )
 
             await asyncio.sleep(3)
-        except Exception as error: # pylint: disable=broad-exception-caught
+        except Exception as error:  # pylint: disable=broad-exception-caught
             log_message(
                 f"cycle_oled caught error, will try to ignore: {str(error)}",
                 level="ERROR",
             )
+
 
 async def main():
     """
@@ -270,7 +284,9 @@ async def main():
         try:
             # If this first API call fails, the program exits, since it has nothing to show.
             await rail_data_instance.get_online_rail_data()
-        except Exception as caught_error: # pylint: disable=broad-exception-caught
+        except (
+            Exception
+        ) as caught_error:  # pylint: disable=broad-exception-caught
             log_message(
                 f"First API call failed. Exiting program: {caught_error}",
                 level="ERROR",
@@ -302,7 +318,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         log_message("[Program exiting cleanly] Keyboard Interrupt")
     # (I do want to catch all exceptions)
-    except Exception as e: # pylint: disable=broad-exception-caught
+    except Exception as e:  # pylint: disable=broad-exception-caught
         log_message(
             f"Unrecoverable error: {str(e)}",
             level="ERROR",

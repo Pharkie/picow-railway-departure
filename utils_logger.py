@@ -7,9 +7,11 @@ Description: Logging utils.
 GitHub Repository: https://github.com/Pharkie/AdamGalactic/
 License: GNU General Public License (GPL)
 """
+
 import os
 import utime
 import config
+
 
 def log_message(message, level="INFO"):
     """
@@ -45,8 +47,10 @@ def log_message(message, level="INFO"):
         try:
             if os.stat(log_filename)[6] > max_log_size:
                 # If the log file is too big, rotate it.
-                rotate_message = f"Rotating log file {log_filename}. " + \
-                f"Max log size: {max_log_size} bytes, max rotated log files: {max_log_files}\n"
+                rotate_message = (
+                    f"Rotating log file {log_filename}. "
+                    + f"Max log size: {max_log_size} bytes, max rotated log files: {max_log_files}\n"
+                )
 
                 with open(log_filename, "a", encoding="utf-8") as log_file:
                     log_file.write(rotate_message)
@@ -57,7 +61,9 @@ def log_message(message, level="INFO"):
                     pass
                 for i in range(max_log_files - 1, 0, -1):
                     try:
-                        os.rename(f"{log_filename}.{i}", f"{log_filename}.{i+1}")
+                        os.rename(
+                            f"{log_filename}.{i}", f"{log_filename}.{i+1}"
+                        )
                     except OSError:
                         pass
                 os.rename(log_filename, f"{log_filename}.1")
@@ -69,4 +75,3 @@ def log_message(message, level="INFO"):
                 log_file.write(log_message_str)
         except OSError as e:
             print(f"Error writing to log file: {e}")
-            

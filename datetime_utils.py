@@ -63,7 +63,7 @@ def last_sunday(year, month):
     # Calculate the date of the last Sunday of the specified month and year.
     # Find the date of the last Sunday in a given month
     last_day = (
-        utime.mktime((year, month + 1, 1, 0, 0, 0, 0, 0)) # type: ignore
+        utime.mktime((year, month + 1, 1, 0, 0, 0, 0, 0))  # type: ignore
         - 86400  # pylint: disable=no-value-for-parameter
     )  # Set to the last day of the previous month
     weekday = utime.localtime(last_day)[6]  # Get the weekday for the last day
@@ -222,7 +222,7 @@ async def check_dst():
         )
 
         # Convert the RTC timestamp to seconds since the Epoch
-        rtc_timestamp_seconds = utime.mktime(rtc_timestamp_rearranged) # type: ignore
+        rtc_timestamp_seconds = utime.mktime(rtc_timestamp_rearranged)  # type: ignore
 
         # Check if DST is in effect
         is_dst_flag = is_dst(current_timestamp)
@@ -236,18 +236,16 @@ async def check_dst():
         if abs(current_timestamp - rtc_timestamp_seconds) > 60:
             # rtc.datetime() param is a different format of tuple to utime.localtime()
             # so below converts it
-            machine.RTC().datetime(
-                (
-                    utime.localtime(current_timestamp)[0],
-                    utime.localtime(current_timestamp)[1],
-                    utime.localtime(current_timestamp)[2],
-                    utime.localtime(current_timestamp)[6],
-                    utime.localtime(current_timestamp)[3],
-                    utime.localtime(current_timestamp)[4],
-                    utime.localtime(current_timestamp)[5],
-                    0,
-                )
-            )
+            machine.RTC().datetime((
+                utime.localtime(current_timestamp)[0],
+                utime.localtime(current_timestamp)[1],
+                utime.localtime(current_timestamp)[2],
+                utime.localtime(current_timestamp)[6],
+                utime.localtime(current_timestamp)[3],
+                utime.localtime(current_timestamp)[4],
+                utime.localtime(current_timestamp)[5],
+                0,
+            ))
             log_message(
                 f"RTC time updated for DST: {is_dst_flag}",
                 level="INFO",
@@ -257,5 +255,5 @@ async def check_dst():
                 f"RTC time not updated for DST, no change from: {is_dst_flag}",
                 level="INFO",
             )
-    except Exception as error: # pylint: disable=broad-except
+    except Exception as error:  # pylint: disable=broad-except
         log_message(f"check_dst() error, will try to ignore: {error}")
