@@ -171,7 +171,7 @@ async def display_first_departure(
 
         # Second line: scroll the calling points
         await scroll_text(
-            oled, format_calling_points(first_departure), config.THIN_LINETWO_Y
+            oled, format_calling_points(first_departure), config.THICK_LINETWO_Y
         )
         await asyncio.sleep(3)
 
@@ -520,8 +520,8 @@ async def scroll_text(oled, text, y):
     """
     # print(f"scroll_text() called with text: {text}")
     text_width = len(text) * config.THICK_CHAR_WIDTH
-    frame_delay = 0.1  # Going under this causes problems
-    step_size = 6  # Smoother scrolling takes too much CPU
+    frame_delay = 0.1  # Delay between frames
+    step_size = 6  # Smoother scrolling takes too much CPU?
 
     for x in range(config.DISPLAY_WIDTH, -(text_width + step_size), -step_size):
         await clear_line(oled, y)
