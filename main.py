@@ -23,7 +23,8 @@ Also includes:
 - sample_data.json: Sample data for offline mode, a JSON response saved from an API call.
 
 Known issues:
-- ETIMEDOUT sometimes happens and crashes prog. Fix attempted.
+- ETIMEDOUT on write to SSD1306.py OLED (.show()) sometimes happens and crashes prog.
+Could be length of wire, magnectic interference?
 
 """
 
@@ -63,7 +64,7 @@ def set_global_exception():
             + f"Traceback: {traceback_str}",
             level="ERROR",
         )
-        sys.exit()
+        # sys.exit()
 
     loop = asyncio.get_event_loop()
     loop.set_exception_handler(handle_exception)
@@ -283,7 +284,7 @@ async def main():
     else:
         try:
             # If this first API call fails, the program exits, since it has nothing to show.
-            await rail_data_instance.get_online_rail_data()
+            await rail_data_instance.get_online_rail_data(oled1, oled2)
         except (
             Exception
         ) as caught_error:  # pylint: disable=broad-exception-caught
@@ -292,7 +293,9 @@ async def main():
                 level="ERROR",
             )
             raise
-        asyncio.create_task(rail_data_instance.cycle_get_online_rail_data())
+        asyncio.create_task(
+            rail_data_instance.cycle_get_online_rail_data(oled1, oled2)
+        )
 
     asyncio.create_task(cycle_oled(oled1, rail_data_instance, 1))
     if oled2:
@@ -323,6 +326,7 @@ if __name__ == "__main__":
             f"Unrecoverable error: {str(e)}",
             level="ERROR",
         )
+        sys.print_exception(e)  # type: ignore # pylint: disable=no-member
         # machine.reset()  # Helpful?
     finally:
         asyncio.new_event_loop()  # Clear retained state
