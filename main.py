@@ -1,6 +1,6 @@
 """
 Author: Adam Knowles
-Version: 0.1
+Version: 0.11
 Name: main.py
 Description: Mini Pico W OLED departure boards for model railway.
 Uses 2 x SSD1306 OLED displays, 128x32 pixels, I2C.
